@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedyG - Inspirado en Minijuegos</title>
+    <title>MEDYG - Inspirado en Minijuegos</title>
     <style>
         /* --- Configuración General del Fondo --- */
         body {
@@ -21,11 +21,11 @@
         header {
             background-color: #1c1e22; /* Gris oscuro/antracita de la plataforma */
             color: #ffffff;
-            padding: 10px 20px;
+            padding: 15px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 3px solid #ffcc00; /* Detalle amarillo/dorado característico */
+            border-bottom: 4px solid #ffcc00; /* Detalle amarillo/dorado característico */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
@@ -90,8 +90,9 @@
             background-color: #ffffff;
             border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             border: 1px solid #e0e0e0;
+            margin-bottom: 25px;
         }
 
         h2 {
@@ -100,6 +101,48 @@
             border-left: 5px solid #ffcc00;
             padding-left: 10px;
             font-size: 20px;
+        }
+
+        /* Estilos nuevos para las secciones de juegos */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .game-card {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+        }
+
+        .game-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #ffcc00;
+        }
+
+        .game-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .no-games {
+            color: #888;
+            font-style: italic;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -116,15 +159,59 @@
             <ul>
                 <li>🏠 Inicio</li>
                 <li>📊 Panel Médico</li>
-                <li>🔬 Casos Clínicos</li>
+                <li>🧬 Casos Clínicos</li>
                 <li>📝 Ajustes</li>
             </ul>
         </nav>
 
         <main>
+            <!-- SECCIÓN: GENERALIDADES -->
             <div class="content-section">
-                <h2>Sección Principal</h2>
-                <p>Este contenedor simula el espacio limpio y ordenado donde minijuegos muestra sus cuadrículas de juegos, adaptado para la interfaz de tu aplicación web.</p>
+                <h2>Generalidades</h2>
+                <div class="game-grid">
+                    <a href="generalidades_virus.html" class="game-card">
+                        <div class="game-icon">🔬</div>
+                        <div>Generalidades y Estructura</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: BACTERIAS -->
+            <div class="content-section">
+                <h2>Bacterias</h2>
+                <div class="game-grid">
+                    <span class="no-games">Próximamente minijuegos de Bacteriología...</span>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: HONGOS -->
+            <div class="content-section">
+                <h2>Hongos</h2>
+                <div class="game-grid">
+                    <span class="no-games">Próximamente minijuegos de Micología...</span>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: PARÁSITOS -->
+            <div class="content-section">
+                <h2>Parásitos</h2>
+                <div class="game-grid">
+                    <a href="parasitologia_cestodos_trematodos.html" class="game-card">
+                        <div class="game-icon">🪱</div>
+                        <div>Céstodos y Tremátodos</div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: VIRUS -->
+            <div class="content-section">
+                <h2>Virus</h2>
+                <div class="game-grid">
+                    <a href="hepatitis_interactivo.html" class="game-card">
+                        <div class="game-icon">🟡</div>
+                        <div>Virus de la Hepatitis</div>
+                    </a>
+                </div>
             </div>
         </main>
 
