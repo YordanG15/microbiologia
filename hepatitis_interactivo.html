@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Hepatitis · Guía Interactiva</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg:#F7F1E8;
+  --paper:#FFFDF9;
+  --ink:#241715;
+  --maroon:#7E1F2B;
+  --maroon-dark:#5A1620;
+  --amber:#C98A2C;
+  --amber-soft:#F0DDB0;
+  --teal:#1F6B75;
+  --teal-soft:#DCEEEF;
+  --green:#3F7A4D;
+  --line:#E4D8C4;
+  --shadow: 0 8px 24px rgba(40,20,10,.10);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family: "Iowan Old Style","Palatino Linotype",Georgia,serif;
+  line-height:1.5;
+}
+h1,h2,h3,h4{font-family:"Iowan Old Style",Georgia,serif; margin:0 0 .4em 0;}
+.mono, .badge, .tag, nav button, .score-box, .quiz button{font-family:"Courier New",monospace;}
+
+/* ---------- layout shell ---------- */
+#app{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
+@media(max-width:900px){#app{grid-template-columns:1fr;} #sidebar{position:sticky; top:0; z-index:20;}}
+
+#sidebar{
+  background:var(--maroon);
+  color:#F7EDE0;
+  padding:18px 14px 30px;
+  display:flex; flex-direction:column; gap:16px;
+}
+#sidebar .brand{display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:2px solid rgba(255,255,255,.18);}
+#sidebar .brand svg{flex-shrink:0;}
+#sidebar .brand h1{font-size:1.25rem; letter-spacing:.5px;}
+#sidebar .brand small{display:block; opacity:.75; font-size:.68rem; letter-spacing:1px;}
+
+nav{display:flex; flex-direction:column; gap:3px; overflow-y:auto;}
+nav button{
+  all:unset; cursor:pointer;
+  color:#F7EDE0; background:transparent; border-radius:6px;
+  padding:8px 10px; font-size:.78rem; letter-spacing:.3px;
+  display:flex; align-items:center; gap:8px;
+  border-left:3px solid transparent;
+}
+nav button:hover{background:rgba(255,255,255,.10);}
+nav button.active{background:rgba(255,255,255,.16); border-left:3px solid var(--amber); font-weight:bold;}
+nav .num{opacity:.6; font-size:.68rem; width:16px; text-align:right;}
+
+/* liver immunity meter (signature element) */
+#immunity{margin-top:auto; background:rgba(0,0,0,.18); border-radius:10px; padding:12px; text-align:center;}
+#immunity .label{font-size:.62rem; letter-spacing:1.5px; opacity:.75; margin-bottom:6px;}
+#immunity svg{width:90px; height:90px;}
+#immunity .scoretxt{font-size:.9rem; margin-top:6px;}
+
+/* ---------- main content ---------- */
+main{padding:32px 40px 90px; max-width:1180px;}
+section.view{display:none; animation:fade .35s ease;}
+section.view.active{display:block;}
+@keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+.eyebrow{color:var(--maroon); font-size:.72rem; letter-spacing:2px; text-transform:uppercase; font-weight:bold; margin-bottom:6px;}
+h2.title{font-size:2.1rem; color:var(--maroon-dark); border-bottom:3px solid var(--amber); display:inline-block; padding-bottom:4px; margin-bottom:18px;}
+p.lead{max-width:70ch; font-size:1.02rem;}
+
+.card{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow);}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start;}
+@media(max-width:850px){.grid2{grid-template-columns:1fr;}}
+
+.diagram-panel{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow);}
+.diagram-panel h3{color:var(--teal); font-size:1rem; text-transform:uppercase; letter-spacing:1px;}
+.diagram-panel svg{width:100%; height:auto; display:block;}
+.legend{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px;}
+.legend li{cursor:pointer; user-select:none;}
+.legend li button{
+  all:unset; cursor:pointer; display:flex; align-items:center; gap:6px;
+  background:var(--amber-soft); border:1px solid var(--amber); border-radius:20px;
+  padding:4px 10px 4px 6px; font-size:.72rem;
+}
+.legend li button .n{background:var(--maroon); color:#fff; border-radius:50%; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; font-size:.62rem;}
+.legend li button.sel{background:var(--maroon); color:#fff;}
+.legend li button.sel .n{background:#fff; color:var(--maroon);}
+.desc-box{margin-top:10px; min-height:52px; background:var(--teal-soft); border-left:4px solid var(--teal); border-radius:6px; padding:8px 12px; font-size:.85rem;}
+
+.part{cursor:pointer; transition:filter .15s, stroke .15s;}
+.part.sel{filter:drop-shadow(0 0 5px var(--amber)); stroke:#fff !important; stroke-width:3;}
+
+details{background:var(--paper); border:1px solid var(--line); border-radius:10px; margin-bottom:10px; box-shadow:var(--shadow);}
+details summary{cursor:pointer; padding:11px 16px; font-weight:bold; color:var(--maroon-dark); list-style:none; display:flex; align-items:center; gap:8px;}
+details summary::before{content:"▸"; color:var(--amber); transition:transform .2s;}
+details[open] summary::before{transform:rotate(90deg);}
+details .inner{padding:0 18px 16px 34px; font-size:.92rem;}
+details .inner ul{margin:6px 0; padding-left:18px;}
+details .inner table{border-collapse:collapse; width:100%; font-size:.85rem; margin-top:6px;}
+details .inner td, details .inner th{border:1px solid var(--line); padding:5px 8px; text-align:left;}
+details .inner th{background:var(--amber-soft);}
+
+.tag{display:inline-block; background:var(--teal); color:#fff; font-size:.68rem; padding:2px 8px; border-radius:10px; margin-right:4px;}
+.tag.maroon{background:var(--maroon);}
+.tag.amber{background:var(--amber); color:#3a2500;}
+
+/* quiz */
+.quiz{background:#fff; border:2px dashed var(--maroon); border-radius:12px; padding:16px 20px; margin-top:22px;}
+.quiz h4{color:var(--maroon-dark); margin-bottom:10px;}
+.qitem{margin-bottom:14px;}
+.qitem p{font-weight:bold; margin:0 0 6px;}
+.qopts{display:flex; flex-wrap:wrap; gap:8px;}
+.qopts button{
+  all:unset; cursor:pointer; background:var(--teal-soft); border:1px solid var(--teal);
+  padding:6px 12px; border-radius:8px; font-size:.82rem;
+}
+.qopts button.correct{background:var(--green); color:#fff; border-color:var(--green);}
+.qopts button.wrong{background:#b23a3a; color:#fff; border-color:#b23a3a;}
+.qopts button:disabled{cursor:default; opacity:.85;}
+.qfeedback{font-size:.8rem; margin-top:4px; min-height:1.1em; font-style:italic;}
+
+table.comp{width:100%; border-collapse:collapse; font-size:.82rem; background:var(--paper); box-shadow:var(--shadow); border-radius:10px; overflow:hidden;}
+table.comp th{background:var(--maroon); color:#fff; padding:8px; text-align:left;}
+table.comp td{padding:7px 8px; border-bottom:1px solid var(--line);}
+table.comp tr:nth-child(even){background:#FBF6EC;}
+
+.microzone{display:flex; flex-direction:column; gap:10px;}
+.pillrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+.footer-note{font-size:.72rem; opacity:.6; margin-top:40px; max-width:70ch;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ================= SIDEBAR ================= -->
+<aside id="sidebar">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 40 40"><path d="M6 22c0-10 8-16 18-14 8 1.5 12 7 12 12 0 8-8 12-17 12C10 32 6 28 6 22Z" fill="#C0343F" stroke="#7E1F2B" stroke-width="2"/></svg>
+    <div><h1>Hepatitis</h1><small>GUÍA INTERACTIVA · MED</small></div>
+  </div>
+  <nav id="navlist"></nav>
+  <div id="immunity">
+    <div class="label">NIVEL DE INMUNIDAD</div>
+    <svg viewBox="0 0 100 100">
+      <path id="liverOutline" d="M12 55c0-25 20-40 45-35 20 4 30 18 30 30 0 20-20 30-42 30C22 80 12 70 12 55Z" fill="none" stroke="#F0DDB0" stroke-width="3"/>
+      <clipPath id="liverClip"><path d="M12 55c0-25 20-40 45-35 20 4 30 18 30 30 0 20-20 30-42 30C22 80 12 70 12 55Z"/></clipPath>
+      <rect id="liverFill" x="0" y="100" width="100" height="0" fill="#3F7A4D" clip-path="url(#liverClip)"/>
+      <path d="M12 55c0-25 20-40 45-35 20 4 30 18 30 30 0 20-20 30-42 30C22 80 12 70 12 55Z" fill="none" stroke="#241715" stroke-width="1.5"/>
+    </svg>
+    <div class="scoretxt" id="scoretxt">0 / 0 aciertos</div>
+  </div>
+</aside>
+
+<!-- ================= MAIN ================= -->
+<main>
+
+<!-- 1. INTRO -->
+<section class="view" id="v-intro">
+  <div class="eyebrow">Sección 1</div>
+  <h2 class="title">¿Qué es la Hepatitis?</h2>
+  <p class="lead"><b>“Enfermedad infectocontagiosa sistémica causada por varios virus que afectan principalmente el hígado.
+  Produciendo inflamación y necrosis de los hepatocitos con alteraciones clínicas, bioquímicas e histológicas,
+  que se superan con la erradicación del virus y el desarrollo de la inmunidad.”</b></p>
+
+  <div class="grid2" style="margin-top:20px;">
+    <div class="diagram-panel">
+      <h3>Vista microscópica · Lobulillo hepático</h3>
+      <svg viewBox="0 0 260 220">
+  <defs>
+    <clipPath id="hexClip"><polygon points="130,10 230,60 230,158 130,208 30,158 30,60"/></clipPath>
+    <radialGradient id="lobGrad" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#FBEFDC"/><stop offset="100%" stop-color="#EFD9B4"/>
+    </radialGradient>
+  </defs>
+  <polygon points="130,10 230,60 230,158 130,208 30,158 30,60" fill="url(#lobGrad)" stroke="#C98A2C" stroke-width="2.4"/>
+  <g clip-path="url(#hexClip)">
+    <line x1="130" y1="108" x2="218.0" y2="108.0" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="211.3" y2="141.7" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="192.2" y2="170.2" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="163.7" y2="189.3" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="130.0" y2="196.0" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="96.3" y2="189.3" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="67.8" y2="170.2" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="48.7" y2="141.7" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="42.0" y2="108.0" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="48.7" y2="74.3" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="67.8" y2="45.8" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="96.3" y2="26.7" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="130.0" y2="20.0" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="163.7" y2="26.7" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="192.2" y2="45.8" stroke="#D8B98A" stroke-width="1.2"/>
+        <line x1="130" y1="108" x2="211.3" y2="74.3" stroke="#D8B98A" stroke-width="1.2"/>
+    <circle cx="130" cy="108" r="30" fill="none" stroke="#D8B98A" stroke-width="1"/>
+    <circle cx="130" cy="108" r="58" fill="none" stroke="#D8B98A" stroke-width="1"/>
+  </g>
+  <polygon points="130,10 230,60 230,158 130,208 30,158 30,60" fill="none" stroke="#C98A2C" stroke-width="2.4"/>
+
+  <!-- sinusoides -->
+  <g id="p3">
+  <path class="part" data-t="p3" d="M95 78 Q130 62 168 80" stroke="#C0343F" stroke-width="4" fill="none" stroke-linecap="round"
+    data-desc="Sinusoides hepáticos: capilares fenestrados entre las placas de hepatocitos por donde circula la sangre desde el espacio porta hacia la vena centrolobulillar; en su pared residen las células de Kupffer."/>
+  <path class="part" data-t="p3" d="M92 138 Q130 158 172 138" stroke="#C0343F" stroke-width="4" fill="none" stroke-linecap="round"
+    data-desc="Sinusoides hepáticos: capilares fenestrados entre las placas de hepatocitos por donde circula la sangre desde el espacio porta hacia la vena centrolobulillar; en su pared residen las células de Kupffer."/>
+  <path class="part" data-t="p3" d="M70 100 Q100 108 100 116" stroke="#C0343F" stroke-width="3" fill="none" stroke-linecap="round"
+    data-desc="Sinusoides hepáticos: capilares fenestrados entre las placas de hepatocitos por donde circula la sangre desde el espacio porta hacia la vena centrolobulillar; en su pared residen las células de Kupffer."/>
+  </g>
+  <!-- flow arrows portal -> central -->
+  <path d="M100 80 l8 -2 l-2 8 z" fill="#7E1F2B"/>
+  <path d="M100 136 l8 3 l-6 6 z" fill="#7E1F2B"/>
+
+  <!-- vena centrolobulillar -->
+  <circle id="p1" class="part" data-t="p1" cx="130" cy="108" r="22" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="2.4"
+    data-desc="Vena centrolobulillar: recibe la sangre ya filtrada por los hepatocitos; el flujo va desde la periferia (espacios porta) hacia el centro del lobulillo."/>
+  <text x="130" y="112" text-anchor="middle" font-size="7" fill="#5A1620">V. central</text>
+
+  <!-- espacios porta (triadas) x4 -->
+  <g id="triads">
+    <g transform="translate(64,52)">
+        <circle class="part" data-t="p2v" cx="-7" cy="0" r="5" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.5" data-desc="Rama de la vena porta: aporta sangre venosa procedente del tubo digestivo (rica en nutrientes, pobre en oxígeno) al espacio porta."/>
+        <circle class="part" data-t="p2a" cx="4" cy="-6" r="3.4" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="1.3" data-desc="Rama de la arteria hepática: aporta sangre arterial oxigenada al espacio porta."/>
+        <circle class="part" data-t="p2d" cx="4" cy="6" r="3.4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1.3" data-desc="Conductillo biliar: recoge la bilis producida por los hepatocitos y la conduce hacia la vesícula/vía biliar."/>
+      </g>
+    <g transform="translate(196,52)">
+        <circle class="part" data-t="p2v" cx="-7" cy="0" r="5" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.5" data-desc="Rama de la vena porta: aporta sangre venosa procedente del tubo digestivo (rica en nutrientes, pobre en oxígeno) al espacio porta."/>
+        <circle class="part" data-t="p2a" cx="4" cy="-6" r="3.4" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="1.3" data-desc="Rama de la arteria hepática: aporta sangre arterial oxigenada al espacio porta."/>
+        <circle class="part" data-t="p2d" cx="4" cy="6" r="3.4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1.3" data-desc="Conductillo biliar: recoge la bilis producida por los hepatocitos y la conduce hacia la vesícula/vía biliar."/>
+      </g>
+    <g transform="translate(64,164)">
+        <circle class="part" data-t="p2v" cx="-7" cy="0" r="5" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.5" data-desc="Rama de la vena porta: aporta sangre venosa procedente del tubo digestivo (rica en nutrientes, pobre en oxígeno) al espacio porta."/>
+        <circle class="part" data-t="p2a" cx="4" cy="-6" r="3.4" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="1.3" data-desc="Rama de la arteria hepática: aporta sangre arterial oxigenada al espacio porta."/>
+        <circle class="part" data-t="p2d" cx="4" cy="6" r="3.4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1.3" data-desc="Conductillo biliar: recoge la bilis producida por los hepatocitos y la conduce hacia la vesícula/vía biliar."/>
+      </g>
+    <g transform="translate(196,164)">
+        <circle class="part" data-t="p2v" cx="-7" cy="0" r="5" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.5" data-desc="Rama de la vena porta: aporta sangre venosa procedente del tubo digestivo (rica en nutrientes, pobre en oxígeno) al espacio porta."/>
+        <circle class="part" data-t="p2a" cx="4" cy="-6" r="3.4" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="1.3" data-desc="Rama de la arteria hepática: aporta sangre arterial oxigenada al espacio porta."/>
+        <circle class="part" data-t="p2d" cx="4" cy="6" r="3.4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1.3" data-desc="Conductillo biliar: recoge la bilis producida por los hepatocitos y la conduce hacia la vesícula/vía biliar."/>
+      </g>
+  </g>
+
+  <!-- celula de Kupffer -->
+  <path id="p4" class="part" data-t="p4" d="M138 82 l3 -4 l2 5 l4 -2 l-1 5 l5 1 l-4 4 l3 4 l-5 -1 l0 5 l-4 -3 l-3 4 l-1 -5 l-5 1 l3 -4 l-3 -3 l5 -1 z"
+    fill="#241715" stroke="#000" stroke-width="0.5"
+    data-desc="Célula de Kupffer: macrófago hepático residente dentro del sinusoide; vigilancia inmune y posible reservorio de virus (ej. VHA)."/>
+
+  <!-- hepatocitos destacados: periportal vs centrolobulillar -->
+  <rect id="p5" class="part" data-t="p5" x="82" y="66" width="15" height="15" rx="2" fill="#F0DDB0" stroke="#C98A2C" stroke-width="1.6"
+    data-desc="Hepatocito periportal (zona 1): primero en recibir sangre oxigenada y nutrientes; predomina la gluconeogénesis y beta-oxidación."/>
+  <rect id="p6" class="part" data-t="p6" x="163" y="140" width="15" height="15" rx="2" fill="#E9C089" stroke="#8a5a1a" stroke-width="1.6"
+    data-desc="Hepatocito centrolobulillar (zona 3): el más alejado del aporte de O2; predomina la glucólisis y es el más vulnerable a hipoxia y a algunos tóxicos/virus."/>
+
+  <text x="130" y="16" text-anchor="middle" font-size="7" fill="#5A1620">Lobulillo hepático (corte hexagonal)</text>
+</svg>
+      <ul class="legend" id="leg-intro"></ul>
+      <div class="desc-box" id="d-intro">Toca una estructura para ver su descripción 🔎</div>
+    </div>
+
+    <div class="diagram-panel">
+      <h3>Vista macroscópica · Hígado y vía biliar</h3>
+      <svg viewBox="0 0 280 220">
+  <defs>
+    <radialGradient id="liverGrad" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#D65C63"/><stop offset="100%" stop-color="#8C1E2B"/>
+    </radialGradient>
+  </defs>
+  <!-- lobulo izquierdo -->
+  <path d="M150 45c-25-20-60-14-72 8-10 18-4 38 10 46 16 9 45 8 62-6 12-10 12-34 0-48Z"
+    fill="url(#liverGrad)" stroke="#5A1620" stroke-width="2"/>
+  <!-- lobulo derecho (grande) + parte principal, clickable -->
+  <path id="m1" class="part" data-t="m1"
+    d="M55 70c4-40 55-55 115-40 45 11 78 45 72 82-7 45-58 68-112 62-46-5-79-40-75-104Z"
+    fill="url(#liverGrad)" stroke="#5A1620" stroke-width="2.4"
+    data-desc="Hígado: órgano blanco principal de los virus hepatotropos (A-E). Se divide en lóbulos derecho e izquierdo; recibe doble irrigación (arteria hepática + vena porta) y drena por las venas hepáticas hacia la vena cava."/>
+  <path d="M150 45c8 6 12 18 10 30" stroke="#5A1620" stroke-width="1.5" fill="none" opacity=".6"/>
+  <text x="150" y="30" text-anchor="middle" font-size="8" fill="#5A1620">Lóbulo izq.</text>
+  <text x="170" y="72" text-anchor="middle" font-size="8" fill="#fff">Lóbulo derecho</text>
+
+  <!-- hilio hepatico: arteria, porta, colédoco entrando -->
+  <path id="m5" class="part" data-t="m5" d="M115 150 Q100 178 92 205" stroke="#C0343F" stroke-width="4.5" fill="none" stroke-linecap="round"
+    data-desc="Arteria hepática: rama del tronco celíaco; aporta sangre oxigenada (~25% del flujo hepático)."/>
+  <path id="m4" class="part" data-t="m4" d="M133 156 Q126 185 128 210" stroke="#1F6B75" stroke-width="6" fill="none" stroke-linecap="round"
+    data-desc="Vena porta: trae sangre venosa desde el tubo digestivo y el bazo (~75% del flujo hepático); ruta por la cual los virus de transmisión fecal-oral (VHA, VHE) alcanzan primero el hígado."/>
+  <path id="m3" class="part" data-t="m3" d="M150 158 Q160 185 170 208" stroke="#C98A2C" stroke-width="5" fill="none" stroke-linecap="round"
+    data-desc="Colédoco / vía biliar: conduce la bilis (y partículas virales excretadas, ej. VHA) desde el hígado y la vesícula hacia el duodeno; su obstrucción genera la variante colestásica."/>
+  <!-- vena hepatica / cava saliendo arriba -->
+  <path id="m6" class="part" data-t="m6" d="M120 62 Q118 30 118 10" stroke="#2B4C7E" stroke-width="6" fill="none" stroke-linecap="round"
+    data-desc="Vena hepática / vena cava inferior: drena la sangre ya filtrada por el hígado de regreso a la circulación general (aurícula derecha)."/>
+  <text x="118" y="8" text-anchor="middle" font-size="7" fill="#2B4C7E">→ corazón</text>
+
+  <!-- vesicula biliar -->
+  <ellipse id="m2" class="part" data-t="m2" cx="150" cy="150" rx="15" ry="24" fill="#3F7A4D" stroke="#1e3a24" stroke-width="2"
+    data-desc="Vesícula biliar: almacena y concentra la bilis producida por el hígado; hacia allí se excretan partículas virales (ej. VHA) que terminan en las heces."/>
+
+  <!-- duodeno -->
+  <ellipse cx="185" cy="205" rx="20" ry="12" fill="#F0DDB0" stroke="#C98A2C" stroke-width="1.6"/>
+  <text x="185" y="208" text-anchor="middle" font-size="7">Duodeno</text>
+
+  <text x="70" y="205" text-anchor="middle" font-size="7" fill="#1F6B75">V. porta</text>
+  <text x="90" y="196" text-anchor="middle" font-size="7" fill="#7E1F2B">A. hepática</text>
+  <text x="170" y="200" text-anchor="middle" font-size="7" fill="#8a5a1a">Colédoco</text>
+</svg>
+      <ul class="legend" id="leg-intro2"></ul>
+      <div class="desc-box" id="d-intro2">Toca una estructura para ver su descripción 🔎</div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:22px;">
+    <details open><summary>Definición y funciones del hígado</summary><div class="inner">
+      Hepatitis = proceso inflamatorio que afecta al hígado. Puede deberse a ingestión/inhalación de tóxicos, medicamentos
+      o infecciones. Cuando hablamos de <b>hepatitis viral</b> nos referimos a la causada por virus <b>hepatotropos</b>: VHA, VHB, VHC, VHD y VHE.
+      <ul>
+        <li>Metabolismo y síntesis proteica</li>
+        <li>Producción y excreción de bilis</li>
+        <li>Detoxificación de fármacos/tóxicos</li>
+        <li>Almacén de glucógeno y vitaminas</li>
+      </ul>
+    </div></details>
+    <details><summary>Etiología general</summary><div class="inner">
+      <span class="tag maroon">Infecciosa</span> virus, bacterias, parásitos.
+      <span class="tag amber">Tóxica</span> alcohol, medicamentos, químicos.<br><br>
+      Virus <b>hepatotropos</b> (afinidad primaria al hígado): VHA, VHB, VHC, VHD, VHE.<br>
+      Virus <b>no hepatotropos</b> (afectan primariamente otro órgano, el hígado es secundario): Epstein-Barr, Citomegalovirus,
+      Herpes simple, Varicela-zóster, Parvovirus B19, sarampión, rubeola, fiebre amarilla.<br>
+      Otros virus asociados: Virus G (VHG), Hepatitis TT.
+    </div></details>
+  </div>
+
+  <div class="quiz" id="quiz-intro"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 2. CLASIFICACIÓN -->
+<section class="view" id="v-clasif">
+  <div class="eyebrow">Sección 2</div>
+  <h2 class="title">Clasificación de las Hepatitis</h2>
+  <div class="grid2">
+    <div class="diagram-panel">
+      <h3>Árbol de clasificación</h3>
+      <svg viewBox="0 0 300 230">
+  <rect x="100" y="4" width="100" height="26" rx="6" fill="#F0DDB0" stroke="#C98A2C"/>
+  <text x="150" y="21" text-anchor="middle" font-size="11">HEPATITIS</text>
+  <line x1="150" y1="30" x2="70" y2="55" stroke="#7E1F2B"/>
+  <line x1="150" y1="30" x2="230" y2="55" stroke="#7E1F2B"/>
+
+  <rect id="c1" class="part" data-t="c1" x="15" y="55" width="110" height="26" rx="6" fill="#C0343F" stroke="#7E1F2B"
+    data-desc="Hepatitis infecciosa: causada por virus, bacterias (ej. leptospirosis, sífilis) o parásitos (amebiasis, fasciolasis, toxoplasmosis)."/>
+  <text x="70" y="72" text-anchor="middle" fill="#fff" font-size="10">INFECCIOSA</text>
+  <!-- mini iconos: virus, bacteria, parasito -->
+  <circle cx="234" cy="90" r="6" fill="none" stroke="#7E1F2B"/>
+  <g stroke="#7E1F2B" stroke-width="1">
+    <line x1="234" y1="84" x2="234" y2="80"/><line x1="234" y1="96" x2="234" y2="100"/>
+    <line x1="228" y1="90" x2="224" y2="90"/><line x1="240" y1="90" x2="244" y2="90"/>
+  </g>
+
+  <rect id="c2" class="part" data-t="c2" x="175" y="55" width="110" height="26" rx="6" fill="#3F7A4D" stroke="#24522F"
+    data-desc="Hepatitis tóxica: por alcohol, medicamentos o sustancias químicas."/>
+  <text x="230" y="72" text-anchor="middle" fill="#fff" font-size="10">TÓXICA</text>
+
+  <line x1="70" y1="81" x2="70" y2="100" stroke="#7E1F2B"/>
+  <rect id="c3" class="part" data-t="c3" x="10" y="100" width="120" height="26" rx="6" fill="#F6E7D8" stroke="#C0343F"
+    data-desc="Virus hepatotropos: afinidad primaria al hígado. VHA (Picornaviridae), VHB (Hepadnaviridae), VHC (Flaviviridae), VHD (Delta), VHE (Caliciviridae)."/>
+  <text x="70" y="117" text-anchor="middle" font-size="9.5">Hepatotropos (VHA-E)</text>
+  <line x1="70" y1="126" x2="70" y2="145" stroke="#7E1F2B" stroke-dasharray="3,2"/>
+  <rect id="c4" class="part" data-t="c4" x="10" y="145" width="120" height="34" rx="6" fill="#F6E7D8" stroke="#1F6B75"
+    data-desc="Virus no hepatotropos: afectan primariamente otro órgano, el hígado es 2°. Ej: Epstein-Barr, CMV, Herpes simple, Varicela-zóster, Parvovirus B19."/>
+  <text x="70" y="160" text-anchor="middle" font-size="9">No hepatotropos</text>
+  <text x="70" y="172" text-anchor="middle" font-size="8">(VEB, CMV, VHS, VVZ...)</text>
+  <line x1="70" y1="179" x2="70" y2="198" stroke="#7E1F2B" stroke-dasharray="3,2"/>
+  <rect id="c5" class="part" data-t="c5" x="10" y="198" width="120" height="26" rx="6" fill="#DCEEEF" stroke="#1F6B75"
+    data-desc="Otros virus asociados descritos: Virus G (VHG) y virus de la Hepatitis TT."/>
+  <text x="70" y="215" text-anchor="middle" font-size="9">Otros: VHG, Hepatitis TT</text>
+
+  <!-- iconitos junto a nodos hepatotropos / no hepatotropos -->
+  <g transform="translate(210,113)">
+    <circle r="9" fill="#F6C56B" stroke="#C98A2C"/>
+    <circle r="4.5" fill="none" stroke="#8a5a1a" stroke-width=".8"/>
+    <text x="0" y="24" text-anchor="middle" font-size="7">A-E</text>
+  </g>
+  <g transform="translate(210,161)">
+    <circle r="9" fill="#DCEEEF" stroke="#1F6B75"/>
+    <path d="M-5 -3 Q0 -8 5 -3 M-5 3 Q0 8 5 3" stroke="#1F6B75" stroke-width="1.2" fill="none"/>
+    <text x="0" y="24" text-anchor="middle" font-size="7">2° hígado</text>
+  </g>
+
+  <!-- botella + pastilla para toxica -->
+  <g transform="translate(255,90)">
+    <rect x="-4" y="-10" width="8" height="16" rx="2" fill="#8FBF9C" stroke="#24522F"/>
+    <rect x="-2" y="-14" width="4" height="5" fill="#8FBF9C" stroke="#24522F"/>
+    <ellipse cx="14" cy="-2" rx="6" ry="3" fill="#fff" stroke="#24522F"/>
+  </g>
+</svg>
+      <ul class="legend" id="leg-clasif"></ul>
+      <div class="desc-box" id="d-clasif">Toca un recuadro del árbol 🔎</div>
+    </div>
+    <div class="diagram-panel">
+      <h3>Clasificación por familia viral (hepatotropos)</h3>
+      <svg viewBox="0 0 260 210">
+  <g font-size="9">
+  <rect id="f1" class="part" data-t="f1" x="8" y="8" width="46" height="58" fill="#FBEFDC" stroke="#C98A2C" rx="6" data-desc="Hepatitis A: Familia Picornaviridae, género Hepatovirus. ARN(+), sin envoltura, 27nm, icosaédrico."/>
+  <circle cx="31" cy="30" r="13" fill="#F6C56B" stroke="#C98A2C" stroke-width="1.6"/>
+<line x1="31" y1="30" x2="44.0" y2="30.0" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="40.2" y2="39.2" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="31.0" y2="43.0" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="21.8" y2="39.2" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="18.0" y2="30.0" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="21.8" y2="20.8" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="31.0" y2="17.0" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+<line x1="31" y1="30" x2="40.2" y2="20.8" stroke="#C98A2C" stroke-width="0.6" opacity=".55"/>
+  <text x="31" y="58" text-anchor="middle" font-weight="bold">A</text>
+
+  <rect id="f2" class="part" data-t="f2" x="58" y="8" width="46" height="58" fill="#EAF3EC" stroke="#3F7A4D" rx="6" data-desc="Hepatitis B: Familia Hepadnaviridae. ADN parcialmente bicatenario, CON envoltura (HBsAg), 42nm."/>
+  <circle cx="81" cy="30" r="13" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1.6"/>
+<line x1="81" y1="30" x2="94.0" y2="30.0" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="90.2" y2="39.2" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="81.0" y2="43.0" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="71.8" y2="39.2" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="68.0" y2="30.0" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="71.8" y2="20.8" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="81.0" y2="17.0" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+<line x1="81" y1="30" x2="90.2" y2="20.8" stroke="#3F7A4D" stroke-width="0.6" opacity=".55"/>
+  <text x="81" y="58" text-anchor="middle" font-weight="bold">B</text>
+
+  <rect id="f3" class="part" data-t="f3" x="108" y="8" width="46" height="58" fill="#E9F3F4" stroke="#1F6B75" rx="6" data-desc="Hepatitis C: Familia Flaviviridae, género Hepacivirus. ARN(+), CON envoltura, 30-60nm."/>
+  <circle cx="131" cy="30" r="13" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.6"/>
+<line x1="131" y1="30" x2="144.0" y2="30.0" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="140.2" y2="39.2" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="131.0" y2="43.0" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="121.8" y2="39.2" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="118.0" y2="30.0" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="121.8" y2="20.8" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="131.0" y2="17.0" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+<line x1="131" y1="30" x2="140.2" y2="20.8" stroke="#1F6B75" stroke-width="0.6" opacity=".55"/>
+  <text x="131" y="58" text-anchor="middle" font-weight="bold">C</text>
+
+  <rect id="f4" class="part" data-t="f4" x="158" y="8" width="46" height="58" fill="#F5E9F3" stroke="#7E1F5A" rx="6" data-desc="Hepatitis D: Género Delta (no clasificada). ARN(-) circular, defectuoso; envoltura prestada del VHB."/>
+  <circle cx="181" cy="30" r="13" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1.6"/>
+<line x1="181" y1="30" x2="194.0" y2="30.0" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="190.2" y2="39.2" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="181.0" y2="43.0" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="171.8" y2="39.2" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="168.0" y2="30.0" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="171.8" y2="20.8" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="181.0" y2="17.0" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+<line x1="181" y1="30" x2="190.2" y2="20.8" stroke="#7E1F5A" stroke-width="0.6" opacity=".55"/>
+  <text x="181" y="58" text-anchor="middle" font-weight="bold">D</text>
+
+  <rect id="f5" class="part" data-t="f5" x="208" y="8" width="46" height="58" fill="#F8ECEC" stroke="#7E1F2B" rx="6" data-desc="Hepatitis E: Familia Caliciviridae. ARN(+), sin envoltura, 30-35nm, cápside con depresiones tipo copa."/>
+  <circle cx="231" cy="30" r="13" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="1.6"/>
+<line x1="231" y1="30" x2="244.0" y2="30.0" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="240.2" y2="39.2" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="231.0" y2="43.0" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="221.8" y2="39.2" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="218.0" y2="30.0" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="221.8" y2="20.8" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="231.0" y2="17.0" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+<line x1="231" y1="30" x2="240.2" y2="20.8" stroke="#7E1F2B" stroke-width="0.6" opacity=".55"/>
+  <text x="231" y="58" text-anchor="middle" font-weight="bold">E</text>
+  </g>
+
+  <text x="10" y="90" font-size="9">"Picorna" · "Hepadna" · "Flavivi" · "Delta" · "Calici"</text>
+  <text x="10" y="104" font-size="9" fill="#7E1F2B">Mnemotecnia clínica: "virus causantes de hepatitis"</text>
+
+  <circle cx="45" cy="155" r="34" fill="#F6E7D8" stroke="#C0343F"/>
+  <path d="M25 153 q20 22 40 0" stroke="#C0343F" stroke-width="2" fill="none"/>
+  <circle cx="45" cy="153" r="10" fill="#F6E48B" stroke="#8a5a1a"/>
+  <text x="45" y="198" font-size="8" text-anchor="middle">Ictericia escleral</text>
+  <text x="140" y="145" font-size="9">Signo compartido por los 5 virus:</text>
+  <text x="140" y="158" font-size="9">ictericia por acumulación de bilirrubina</text>
+  <text x="140" y="175" font-size="9" fill="#7E1F2B">(los 5 producen inflamación + necrosis</text>
+  <text x="140" y="188" font-size="9" fill="#7E1F2B">hepatocelular, difieren en cronicidad)</text>
+</svg>
+      <ul class="legend" id="leg-clasif2"></ul>
+      <div class="desc-box" id="d-clasif2">Toca una de las letras A-E 🔎</div>
+    </div>
+  </div>
+  <div class="quiz" id="quiz-clasif"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 3. VARIANTES CLÍNICAS -->
+<section class="view" id="v-variantes">
+  <div class="eyebrow">Sección 3</div>
+  <h2 class="title">Variantes Clínicas — "CCBF"</h2>
+  <p class="lead">Toda hepatitis viral puede presentarse bajo distintas formas evolutivas:</p>
+  <div class="grid2">
+    <div class="card">
+      <ul>
+        <li><b>Clásica</b> — curso típico en 3 fases (preictérica, ictérica, convalecencia).</li>
+        <li><b>Colestásica</b> — predomina la obstrucción del flujo biliar; poco frecuente en niños.</li>
+        <li><b>Bifásica</b> — dos episodios (recaída) tras una mejoría inicial.</li>
+        <li><b>Fulminante</b> — necrosis hepática masiva y falla hepática aguda; forma más grave.</li>
+      </ul>
+    </div>
+    <div class="diagram-panel">
+      <h3>Curva evolutiva (variante clásica)</h3>
+      <svg viewBox="0 0 260 210">
+  <!-- 4 iconos de variantes -->
+  <g transform="translate(20,14)">
+    <path d="M0 30 Q15 4 30 30" stroke="#3F7A4D" stroke-width="3" fill="none"/>
+    <circle class="part" data-t="vc1" cx="15" cy="18" r="20" fill="transparent" stroke="none"
+      data-desc="Clásica: curso típico en 3 fases (preictérica, ictérica, convalecencia); es la forma más frecuente."/>
+    <text x="15" y="45" text-anchor="middle" font-size="7.5">Clásica</text>
+  </g>
+  <g transform="translate(80,14)">
+    <path d="M0 30 Q15 4 30 30" stroke="#C98A2C" stroke-width="3" fill="none"/>
+    <line x1="15" y1="30" x2="15" y2="40" stroke="#C98A2C" stroke-width="3"/>
+    <line x1="9" y1="40" x2="21" y2="40" stroke="#C0343F" stroke-width="3"/>
+    <circle class="part" data-t="vc2" cx="15" cy="20" r="24" fill="transparent" stroke="none"
+      data-desc="Colestásica: predomina la obstrucción/enlentecimiento del flujo biliar (ictericia prolongada, prurito); poco frecuente en niños."/>
+    <text x="15" y="52" text-anchor="middle" font-size="7.5">Colestásica</text>
+  </g>
+  <g transform="translate(140,14)">
+    <path d="M0 30 Q8 4 16 20 Q24 4 32 30" stroke="#9CC7CF" stroke-width="3" fill="none"/>
+    <circle class="part" data-t="vc3" cx="16" cy="18" r="22" fill="transparent" stroke="none"
+      data-desc="Bifásica: tras una mejoría inicial ocurre un segundo episodio (recaída) de la enfermedad."/>
+    <text x="16" y="45" text-anchor="middle" font-size="7.5">Bifásica</text>
+  </g>
+  <g transform="translate(200,14)">
+    <path d="M0 30 Q15 2 24 14 L14 40" stroke="#C0343F" stroke-width="3" fill="none"/>
+    <polygon points="14,4 20,14 8,14" fill="#C0343F"/>
+    <text x="15" y="10" text-anchor="middle" font-size="7" fill="#fff">!</text>
+    <circle class="part" data-t="vc4" cx="15" cy="20" r="24" fill="transparent" stroke="none"
+      data-desc="Fulminante: necrosis hepática masiva y falla hepática aguda; forma más grave, con mayor mortalidad."/>
+    <text x="15" y="52" text-anchor="middle" font-size="7.5">Fulminante</text>
+  </g>
+
+  <line x1="20" y1="180" x2="250" y2="180" stroke="#241715"/>
+  <line x1="20" y1="70" x2="20" y2="180" stroke="#241715"/>
+  <path d="M20 170 Q60 90 90 110 Q130 70 160 105 Q200 150 250 165" fill="none" stroke="#C0343F" stroke-width="3"/>
+  <rect class="part" data-t="v1" x="25" y="182" width="60" height="14" fill="#F6C56B" data-desc="Fase preictérica: náusea, anorexia, fiebre, fatiga, cefalea, epigastralgia, coriza, dolor en CSD, odinofagia, rinorrea."/>
+  <rect class="part" data-t="v2" x="95" y="182" width="60" height="14" fill="#8FBF9C" data-desc="Fase ictérica: ictericia, coluria, hipocolia, hepatomegalia dolorosa; aumento de aminotransferasas y bilirrubina."/>
+  <rect class="part" data-t="v3" x="165" y="182" width="80" height="14" fill="#9CC7CF" data-desc="Fase de convalecencia: desaparecen las alteraciones físicas y se resuelve la ictericia."/>
+  <text x="55" y="193" font-size="7" text-anchor="middle">Preictérica</text>
+  <text x="125" y="193" font-size="7" text-anchor="middle">Ictérica</text>
+  <text x="205" y="193" font-size="7" text-anchor="middle">Convalecencia</text>
+  <text x="20" y="66" font-size="7.5" fill="#7E1F2B">↑ Enzimas / síntomas</text>
+</svg>
+      <ul class="legend" id="leg-var"></ul>
+      <div class="desc-box" id="d-var">Toca una fase de la curva 🔎</div>
+    </div>
+  </div>
+  <div class="quiz" id="quiz-var"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 4. MANIFESTACIONES -->
+<section class="view" id="v-manif">
+  <div class="eyebrow">Sección 4</div>
+  <h2 class="title">Manifestaciones Clínicas Generales</h2>
+  <div class="grid2">
+    <div class="card">
+      <p><b>Ictericia:</b> 20% en niños. <b>Anictérica:</b> 80% lactantes, 50% escolares.</p>
+      <details open><summary>Espectro clínico completo</summary><div class="inner">
+        Los pacientes pueden ser <b>asintomáticos</b> o con infección inaparente, pasando por cuadros
+        <b>sub-clínicos persistentes y crónicos</b> (cirrosis, enfermedad hepática crónica), hasta cuadros
+        <b>fulminantes y fatales</b> o transformadores como el <b>carcinoma hepatocelular</b>.
+      </div></details>
+    </div>
+    <div class="diagram-panel">
+      <h3>Signo clave: Ictericia escleral</h3>
+      <svg viewBox="0 0 200 150">
+  <ellipse cx="100" cy="72" rx="72" ry="52" fill="#F0DDB0"/>
+  <path d="M32 72 Q100 30 168 72 Q100 114 32 72Z" fill="none" stroke="#C98A2C" stroke-width="1.5"/>
+  <circle cx="100" cy="72" r="34" fill="#F6E48B" stroke="#C98A2C" stroke-width="2" class="part" data-t="ic1"
+    data-desc="Esclera amarillenta (ictericia escleral): depósito de bilirrubina por incapacidad hepática de conjugarla/excretarla; primer sitio donde suele notarse clínicamente."/>
+  <path d="M72 60 q6 6 0 14 M128 60 q-6 6 0 14" stroke="#C0343F" stroke-width="1" fill="none" opacity=".55"/>
+  <circle cx="100" cy="72" r="15" fill="#3a2a12"/>
+  <circle cx="100" cy="72" r="15" fill="none" stroke="#1a1208" stroke-width="1"/>
+  <circle cx="95" cy="67" r="3" fill="#fff" opacity=".8"/>
+  <text x="100" y="128" text-anchor="middle" font-size="9">Bilirrubina ↑ en sangre y tejidos</text>
+  <text x="100" y="140" text-anchor="middle" font-size="7" fill="#7E1F2B">(hiperbilirrubinemia → depósito en esclera y piel)</text>
+</svg>
+      <ul class="legend" id="leg-manif"></ul>
+      <div class="desc-box" id="d-manif">Toca el ojo 🔎</div>
+    </div>
+  </div>
+  <div class="quiz" id="quiz-manif"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 5. HEPATITIS A -->
+<section class="view" id="v-hepA">
+  <div class="eyebrow">Sección 5</div>
+  <h2 class="title">Hepatitis A (VHA)</h2>
+  <div class="grid2">
+    <div class="diagram-panel">
+      <h3>Estructura viral — Picornavirus</h3>
+      <svg viewBox="0 0 260 220">
+  <defs><clipPath id="capA"><circle cx="130" cy="105" r="46"/></clipPath></defs>
+
+  <circle id="a1" class="part" data-t="a1" cx="130" cy="105" r="60" fill="#FBEFDC" stroke="#C98A2C" stroke-width="3"
+    data-desc="Cápside icosaédrica SIN envoltura, ~27 nm, estructura T=1 (60 copias de VP1-VP3 + VP4 interna). Estable a pH3 y cloroformo; se inactiva a 100°C en 5 min; sobrevive a -20°C."/>
+
+  <g clip-path="url(#capA)">
+<line x1="130" y1="105" x2="174.0" y2="105.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="168.1" y2="127.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="152.0" y2="143.1" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="130.0" y2="149.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="108.0" y2="143.1" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="91.9" y2="127.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="86.0" y2="105.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="91.9" y2="83.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="108.0" y2="66.9" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="130.0" y2="61.0" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="152.0" y2="66.9" stroke="#00000022" stroke-width="1"/>
+<line x1="130" y1="105" x2="168.1" y2="83.0" stroke="#00000022" stroke-width="1"/>
+<circle cx="130" cy="105" r="14.7" fill="none" stroke="#00000022" stroke-width="1"/>
+<circle cx="130" cy="105" r="29.3" fill="none" stroke="#00000022" stroke-width="1"/>
+<circle cx="130" cy="105" r="44.0" fill="none" stroke="#00000022" stroke-width="1"/>
+</g>
+  <path class="part" data-t="vp1" data-desc="VP1: proteína de cápside más expuesta en la superficie; principal blanco de anticuerpos neutralizantes." d="M190.0,105.0 A60,60 0 0 1 130.0,165.0 L130.0,151.0 A46,46 0 0 0 176.0,105.0 Z" fill="#F6C56B" stroke="#C98A2C" stroke-width="1.3"/>
+  <text x="167.5" y="142.5" font-size="6.5" text-anchor="middle" fill="#241715">VP1</text>
+  <path class="part" data-t="vp2" data-desc="VP2: proteína estructural de la cápside icosaédrica, junto a VP1 y VP3 forma la superficie externa." d="M130.0,165.0 A60,60 0 0 1 70.0,105.0 L84.0,105.0 A46,46 0 0 0 130.0,151.0 Z" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1.3"/>
+  <text x="92.5" y="142.5" font-size="6.5" text-anchor="middle" fill="#241715">VP2</text>
+  <path class="part" data-t="vp3" data-desc="VP3: proteína estructural de la cápside, contribuye a la simetría icosaédrica de 60 subunidades (T=1)." d="M70.0,105.0 A60,60 0 0 1 130.0,45.0 L130.0,59.0 A46,46 0 0 0 84.0,105.0 Z" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.3"/>
+  <text x="92.5" y="67.5" font-size="6.5" text-anchor="middle" fill="#241715">VP3</text>
+  <path class="part" data-t="vp4" data-desc="VP4: proteína interna, pequeña; se ubica bajo la cápside en contacto con el ARN genómico." d="M130.0,45.0 A60,60 0 0 1 190.0,105.0 L176.0,105.0 A46,46 0 0 0 130.0,59.0 Z" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1.3"/>
+  <text x="167.5" y="67.5" font-size="6.5" text-anchor="middle" fill="#241715">VP4</text>
+
+  <!-- genoma -->
+  <path id="a2" class="part" data-t="a2" d="M105 95 q8 -14 22 -13 q13 2 8 16 q-6 12 -20 10 q-13 -2 -10 -13Z" fill="#241715"
+    data-desc="Genoma ARN monocatenario (+) de 7.5 kb: regiones P1-2A (cápside VP1-VP4), P2 (2BC: helicasa, formación de vesículas) y P3 (3A,3B,3C proteasa,3D polimerasa) = complejo de replicación."/>
+  <path d="M110 96 q7 -3 14 0 M112 102 q6 3 12 0" stroke="#F6C56B" stroke-width="1" fill="none" opacity=".7"/>
+
+  <!-- VPg -->
+  <circle id="a3" class="part" data-t="a3" cx="102" cy="92" r="6" fill="#C0343F" stroke="#5A1620" stroke-width="1"
+    data-desc="VPg (proteína viral genómica): unida covalentemente al extremo 5' del ARN; actúa como cebador (primer) de la replicación."/>
+
+  <text x="130" y="16" text-anchor="middle" font-size="8" fill="#5A1620">Picornavirus · sin envoltura · 27 nm</text>
+  <text x="130" y="206" text-anchor="middle" font-size="7.5" fill="#7E1F2B">Reservorio: el hombre · Transmisión: fecal-oral</text>
+</svg>
+      <ul class="legend" id="leg-A"></ul>
+      <div class="desc-box" id="d-A">Toca una estructura 🔎</div>
+    </div>
+    <div class="diagram-panel">
+      <h3>Patogenia — ruta fecal-oral</h3>
+      <svg viewBox="0 0 280 180">
+  <!-- boca -->
+  <g id="ap1group">
+    <ellipse cx="30" cy="30" rx="18" ry="12" fill="#E7B7B7" stroke="#7E1F2B" stroke-width="1.5"/>
+    <path id="ap1" class="part" data-t="ap1" d="M16 30 Q30 40 44 30" stroke="#7E1F2B" stroke-width="3" fill="none" stroke-linecap="round"
+      data-desc="Acceso oral (boca): ingesta de agua/alimentos contaminados o contacto persona-persona (manos, fómites)."/>
+    <text x="30" y="52" text-anchor="middle" font-size="7">Boca</text>
+  </g>
+
+  <!-- tubo digestivo (espiral) -->
+  <path id="ap2" class="part" data-t="ap2" d="M46 32 Q70 20 78 40 Q86 60 66 66 Q46 72 56 88 Q64 100 84 96"
+    stroke="#C98A2C" stroke-width="6" fill="none" stroke-linecap="round"
+    data-desc="Tubo digestivo: el virus atraviesa la mucosa intestinal e ingresa a la circulación (viremia)."/>
+  <text x="65" y="112" text-anchor="middle" font-size="7">Tubo digestivo</text>
+
+  <!-- flecha -->
+  <path d="M90 92 l14 4 l-4 8 z" fill="#7E1F2B"/>
+
+  <!-- sangre -->
+  <rect id="ap3" class="part" data-t="ap3" x="108" y="80" width="34" height="22" rx="6" fill="#7E1F2B" stroke="#5A1620" stroke-width="1.4"
+    data-desc="Sangre: viremia transitoria que transporta el virus desde el intestino hasta el hígado."/>
+  <text x="125" y="93" text-anchor="middle" font-size="6.5" fill="#fff">Sangre</text>
+
+  <path d="M144 88 l14 -6 l-2 9 z" fill="#7E1F2B"/>
+
+  <!-- higado -->
+  <path id="ap4" class="part" data-t="ap4" d="M160 45c8-22 42-28 66-14 26 15 28 42 14 56-15 16-48 20-66 6C158 80 152 66 160 45Z"
+    fill="#C0343F" stroke="#5A1620" stroke-width="2"
+    data-desc="Hígado: sitio de replicación viral en hepatocitos y en células de Kupffer; el ARN se replica en el citoplasma mediante una ARN-polimerasa dependiente de ARN codificada por el propio virus."/>
+  <text x="196" y="58" text-anchor="middle" font-size="7" fill="#fff">Hígado</text>
+
+  <path d="M205 96 l-3 14 l-9 -7 z" fill="#7E1F2B"/>
+
+  <!-- bilis -->
+  <rect id="ap5" class="part" data-t="ap5" x="195" y="112" width="26" height="18" rx="5" fill="#3F7A4D" stroke="#1e3a24" stroke-width="1.4"
+    data-desc="Bilis: vehículo de excreción viral desde el hígado hacia el intestino, a través de la vesícula/vía biliar."/>
+  <text x="208" y="124" text-anchor="middle" font-size="6.5" fill="#fff">Bilis</text>
+
+  <path d="M208 132 l0 14 l-2 -1 l0 -12 z" fill="#7E1F2B"/>
+
+  <!-- heces -->
+  <g id="ap6group">
+    <ellipse id="ap6" class="part" data-t="ap6" cx="208" cy="160" rx="26" ry="14" fill="#8a6a3a" stroke="#5c4520" stroke-width="1.6"
+      data-desc="Heces: eliminación final del virus (excreción prolongada, incluso antes de los síntomas); principal fuente de contagio fecal-oral (agua/alimentos)."/>
+    <path d="M192 158 q8 -6 16 0 q8 6 16 0" stroke="#5c4520" stroke-width="1" fill="none" opacity=".6"/>
+    <text x="208" y="163" text-anchor="middle" font-size="6.5" fill="#fff">Heces</text>
+  </g>
+  <path d="M182 162 Q100 172 46 42" stroke="#B23A3A" stroke-width="1.4" fill="none" stroke-dasharray="4,3" opacity=".55"/>
+  <text x="90" y="150" font-size="7" fill="#B23A3A">ciclo de contagio (agua/alimentos)</text>
+</svg>
+      <ul class="legend" id="leg-Ap"></ul>
+      <div class="desc-box" id="d-Ap">Toca un paso de la ruta 🔎</div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <details open><summary>Generalidades y clasificación</summary><div class="inner">
+      <span class="tag">Picornavirus</span> <span class="tag amber">ARN ss(+)</span> <span class="tag maroon">Sin envoltura</span><br>
+      Grupo IV ((+)ssRNA) · Familia Picornaviridae · Género Hepatovirus · Especie Hepatitis A virus.<br>
+      Replicación en el hígado y excreción por la bilis; daño hepático mediado por <b>células T</b>.
+      Contagio: 1 semana antes y 2 semanas después del inicio de los síntomas.
+    </div></details>
+    <details><summary>Características / organización del genoma</summary><div class="inner">
+      Tamaño 27 nm, estructura icosaédrica, sin envoltura. Genoma: 7.5 kb ssRNA(+) con regiones P1-2A (cápside),
+      2BC (helicasa, formación de vesículas) y P3 (proteasa, primer, ancla de membrana, polimerasa) — forman el
+      <i>complejo de replicación</i>. El hombre es el único reservorio.
+    </div></details>
+    <details><summary>Replicación en la célula huésped</summary><div class="inner">
+      1) Unión a receptor HAV-CR1 (dominio N-terminal tipo inmunoglobulina). 2) Desnudamiento del ARN.
+      3) Traducción y procesamiento proteolítico. 4) Replicación del ARN. 5) Ensamblaje y empaquetamiento.
+      6) Maduración y liberación. Capaz de replicarse en hepatocitos y células de Kupffer. Período de incubación
+      promedio: 30 días.
+    </div></details>
+    <details><summary>Cuadro clínico</summary><div class="inner">
+      Incubación 15-40 días (28 días). En lactantes/preescolares: signos inespecíficos. Puede presentarse de
+      forma clásica y evolucionar a fulminante o colestásica. Duración: semanas. Vía: fecal-oral; sin riesgo
+      de transmisión parenteral o vertical.
+    </div></details>
+    <details><summary>Diagnóstico</summary><div class="inner">
+      <table><tr><th>Marcador</th><th>Utilidad</th></tr>
+      <tr><td>Anti-VHA IgM</td><td>Desde el inicio de la enfermedad; pico entre 4ª-6ª semana</td></tr>
+      <tr><td>Anti-VHA IgG</td><td>Etapas tempranas; persistencia indefinida = inmunidad</td></tr>
+      <tr><td>VHA en heces</td><td>Fase tardía de incubación; pico al inicio de síntomas</td></tr>
+      </table>
+      Elevación de aminotransferasas, bilirrubina y fosfatasa alcalina.
+    </div></details>
+    <details><summary>Tratamiento y pronóstico</summary><div class="inner">
+      Enfermedad <b>autolimitada</b>, sin tratamiento específico. Reposo en cama no esencial. La dieta no ha
+      mostrado beneficio comprobado. <b>Pronóstico: muy bueno.</b>
+    </div></details>
+    <details><summary>Epidemiología y prevención</summary><div class="inner">
+      Amplia distribución mundial, endémica en países en desarrollo. América Latina: 350.000-400.000 casos/año.
+      Mortalidad 0.4%.<br><br>
+      <b>Prevención:</b> vacunación universal infantil (98% eficacia) — 1ª dosis >1 año, 2ª dosis 6-12 meses
+      después. Aislamiento entérico y desinfección con hipoclorito de sodio (1:100). Profilaxis postexposición
+      con inmunoglobulina estándar (contacto con caso índice ≤14 días, brotes institucionales, RN de madre con
+      HA en las últimas 2 semanas). Pre-exposición para no vacunados que viajan a zona endémica.
+    </div></details>
+  </div>
+  <div class="quiz" id="quiz-A"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 6. HEPATITIS B -->
+<section class="view" id="v-hepB">
+  <div class="eyebrow">Sección 6</div>
+  <h2 class="title">Hepatitis B (VHB)</h2>
+  <div class="grid2">
+    <div class="diagram-panel">
+      <h3>Partícula Dane y marcadores</h3>
+      <svg viewBox="0 0 320 220">
+  <defs><clipPath id="capB"><circle cx="105" cy="110" r="40"/></clipPath></defs>
+
+  <!-- envoltura + espiculas HBsAg -->
+  <circle id="b1base" cx="105" cy="110" r="68" fill="#DDEEDF" stroke="#3F7A4D" stroke-width="1" opacity=".6"/>
+  <line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="173.0" y1="110.0" x2="181.0" y2="110.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="181.0" cy="110.0" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="169.7" y1="131.0" x2="177.3" y2="133.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="177.3" cy="133.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="160.0" y1="150.0" x2="166.5" y2="154.7" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="166.5" cy="154.7" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="145.0" y1="165.0" x2="149.7" y2="171.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="149.7" cy="171.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="126.0" y1="174.7" x2="128.5" y2="182.3" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="128.5" cy="182.3" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="105.0" y1="178.0" x2="105.0" y2="186.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="105.0" cy="186.0" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="84.0" y1="174.7" x2="81.5" y2="182.3" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="81.5" cy="182.3" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="65.0" y1="165.0" x2="60.3" y2="171.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="60.3" cy="171.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="50.0" y1="150.0" x2="43.5" y2="154.7" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="43.5" cy="154.7" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="40.3" y1="131.0" x2="32.7" y2="133.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="32.7" cy="133.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="37.0" y1="110.0" x2="29.0" y2="110.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="29.0" cy="110.0" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="40.3" y1="89.0" x2="32.7" y2="86.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="32.7" cy="86.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="50.0" y1="70.0" x2="43.5" y2="65.3" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="43.5" cy="65.3" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="65.0" y1="55.0" x2="60.3" y2="48.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="60.3" cy="48.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="84.0" y1="45.3" x2="81.5" y2="37.7" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="81.5" cy="37.7" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="105.0" y1="42.0" x2="105.0" y2="34.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="105.0" cy="34.0" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="126.0" y1="45.3" x2="128.5" y2="37.7" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="128.5" cy="37.7" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="145.0" y1="55.0" x2="149.7" y2="48.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="149.7" cy="48.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="160.0" y1="70.0" x2="166.5" y2="65.3" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="166.5" cy="65.3" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." x1="169.7" y1="89.0" x2="177.3" y2="86.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b1" data-desc="Envoltura viral: contiene el antígeno de superficie HBsAg (proteínas L, M y S) embebido en una bicapa lipídica." cx="177.3" cy="86.5" r="2.6" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+  <circle class="part" data-t="b1" cx="105" cy="110" r="68" fill="#8FBF9C" fill-opacity=".28" stroke="#3F7A4D" stroke-width="2.6"
+    data-desc="Envoltura viral (partícula Dane): contiene el antígeno de superficie HBsAg (proteínas L, M y S) en una bicapa lipídica; rodea a la nucleocápside."/>
+
+  <!-- core -->
+  <circle id="b2" class="part" data-t="b2" cx="105" cy="110" r="40" fill="#F0DDB0" stroke="#7E1F2B" stroke-width="2.2"
+    data-desc="Nucleocápside (core): contiene el HBcAg (antígeno core, no circula libre en sangre) con simetría icosaédrica."/>
+  <g clip-path="url(#capB)">
+<line x1="105" y1="110" x2="145.0" y2="110.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="137.4" y2="133.5" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="117.4" y2="148.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="92.6" y2="148.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="72.6" y2="133.5" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="65.0" y2="110.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="72.6" y2="86.5" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="92.6" y2="72.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="117.4" y2="72.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="105" y1="110" x2="137.4" y2="86.5" stroke="#5A3A0F33" stroke-width="1"/>
+<circle cx="105" cy="110" r="13.3" fill="none" stroke="#5A3A0F33" stroke-width="1"/>
+<circle cx="105" cy="110" r="26.7" fill="none" stroke="#5A3A0F33" stroke-width="1"/>
+<circle cx="105" cy="110" r="40.0" fill="none" stroke="#5A3A0F33" stroke-width="1"/>
+</g>
+
+  <!-- genoma ADN parcialmente bicatenario, circular incompleto -->
+  <path id="b3" class="part" data-t="b3" d="M105 110 m-22 0 a22 22 0 1 1 40 12"
+    fill="none" stroke="#241715" stroke-width="3.4" stroke-linecap="round"
+    data-desc="ADN circular PARCIALMENTE bicatenario (una hebra incompleta, con un hueco): genoma más pequeño de los virus ADN humanos (~3.2 kb)."/>
+  <path d="M105 110 m-16 4 a16 16 0 1 1 28 9" fill="none" stroke="#F0DDB0" stroke-width="1.2" stroke-dasharray="2,2"/>
+
+  <!-- ADN polimerasa en el hueco -->
+  <ellipse id="b4" class="part" data-t="b4" cx="123" cy="94" rx="7" ry="5" fill="#C0343F" stroke="#5A1620" stroke-width="1.2"
+    data-desc="ADN polimerasa viral: enzima que completa la cadena de ADN parcialmente doble dentro del hepatocito (tiene también actividad transcriptasa reversa)."/>
+
+  <!-- HBeAg secretado, libre -->
+  <g id="b5">
+  <circle class="part" data-t="b5" cx="97" cy="130" r="4.5" fill="#7E1F2B" stroke="#5A1620"
+    data-desc="HBeAg: proteína del core procesada y SECRETADA (no forma parte de la partícula); marcador soluble de replicación activa y alta infectividad."/>
+  <circle class="part" data-t="b5" cx="115" cy="134" r="3.5" fill="#7E1F2B" stroke="#5A1620"
+    data-desc="HBeAg: proteína del core procesada y SECRETADA (no forma parte de la partícula); marcador soluble de replicación activa y alta infectividad."/>
+  </g>
+
+  <text x="105" y="18" text-anchor="middle" font-size="8" fill="#3F7A4D">Partícula Dane (virión infeccioso, ~42 nm)</text>
+
+  <!-- particulas subvirales: esferica y filamentosa (no infecciosas, solo HBsAg) -->
+  <line x1="188" y1="110" x2="210" y2="110" stroke="#C98A2C" stroke-width="1.4" stroke-dasharray="3,2"/>
+  <circle id="b6" class="part" data-t="b6" cx="245" cy="75" r="20" fill="#DDEEDF" stroke="#3F7A4D" stroke-width="2"
+    data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)."/>
+  <line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="265.0" y1="75.0" x2="270.0" y2="75.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="270.0" cy="75.0" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="262.3" y1="85.0" x2="266.7" y2="87.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="266.7" cy="87.5" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="255.0" y1="92.3" x2="257.5" y2="96.7" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="257.5" cy="96.7" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="245.0" y1="95.0" x2="245.0" y2="100.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="245.0" cy="100.0" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="235.0" y1="92.3" x2="232.5" y2="96.7" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="232.5" cy="96.7" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="227.7" y1="85.0" x2="223.3" y2="87.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="223.3" cy="87.5" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="225.0" y1="75.0" x2="220.0" y2="75.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="220.0" cy="75.0" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="227.7" y1="65.0" x2="223.3" y2="62.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="223.3" cy="62.5" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="235.0" y1="57.7" x2="232.5" y2="53.3" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="232.5" cy="53.3" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="245.0" y1="55.0" x2="245.0" y2="50.0" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="245.0" cy="50.0" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="255.0" y1="57.7" x2="257.5" y2="53.3" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="257.5" cy="53.3" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+<line class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." x1="262.3" y1="65.0" x2="266.7" y2="62.5" stroke="#3F7A4D" stroke-width="2.2"/>
+<circle class="part" data-t="b6" data-desc="Partícula subviral esférica (~22 nm): compuesta solo por HBsAg, sin genoma ni core; NO es infecciosa pero abunda en sangre (hasta 1000x más que el virión)." cx="266.7" cy="62.5" r="1.8" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1"/>
+
+  <g id="b7">
+  <rect class="part" data-t="b7" x="215" y="140" width="70" height="16" rx="8" fill="#DDEEDF" stroke="#3F7A4D" stroke-width="2"
+    data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="220" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="228" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="236" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="244" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="252" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="260" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="268" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="276" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  <circle class="part" data-t="b7" cx="284" cy="148" r="4" fill="#8FBF9C" stroke="#3F7A4D" stroke-width="1" data-desc="Partícula subviral filamentosa: también compuesta solo de HBsAg (proteínas L/M/S), forma tubular alargada; tampoco es infecciosa."/>
+  </g>
+  <text x="250" y="102" text-anchor="middle" font-size="7">Esférica</text>
+  <text x="250" y="168" text-anchor="middle" font-size="7">Filamentosa</text>
+  <text x="250" y="35" text-anchor="middle" font-size="7" fill="#7E1F2B">Formas subvirales (solo HBsAg)</text>
+</svg>
+      <ul class="legend" id="leg-B"></ul>
+      <div class="desc-box" id="d-B">Toca una estructura 🔎</div>
+    </div>
+    <div class="diagram-panel">
+      <h3>Marcadores serológicos — interpretación</h3>
+      <table class="comp">
+        <tr><th>Marcador</th><th>Aguda</th><th>Crónica</th><th>Curado</th><th>Vacunado</th></tr>
+        <tr><td>HBsAg</td><td>+</td><td>+</td><td>−</td><td>−</td></tr>
+        <tr><td>Anti-HBc IgG</td><td>−</td><td>+</td><td>+</td><td>−</td></tr>
+        <tr><td>Anti-HBc IgM</td><td>+</td><td>−</td><td>−</td><td>−</td></tr>
+        <tr><td>Anti-HBs</td><td>−</td><td>−</td><td>+</td><td>+</td></tr>
+        <tr><td>ADN-VHB</td><td>+</td><td>+</td><td>−</td><td>−</td></tr>
+      </table>
+      <p style="font-size:.8rem; margin-top:8px;">HBeAg y Anti-HBe reflejan el <b>riesgo de contagiosidad</b>
+      (HBeAg = alta replicación; Anti-HBe = bajo riesgo).</p>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <details open><summary>Generalidades</summary><div class="inner">
+      <span class="tag maroon">Hepadnavirus tipo I</span> <span class="tag amber">DNA</span><br>
+      Afecta todos los grupos etarios. Epidemiología variable: baja en países industrializados, intermedia en
+      Latinoamérica/África, alta en China e Indonesia. Primer virus de hepatitis identificado (Antígeno
+      Australiano, 1965). ~30% de la población mundial ha sido expuesta; >400 millones de infectados crónicos;
+      >1 millón de muertes/año por cirrosis y cáncer hepático. 82% de los cánceres hepáticos asociados a virus
+      de hepatitis corresponden a VHB (más que VHC).
+    </div></details>
+    <details><summary>Replicación</summary><div class="inner">
+      1) El VHB se fija a un receptor del hepatocito. 2) La envoltura se funde con la membrana celular liberando
+      el núcleo (core) al citoplasma. 3) Las proteínas del core se disocian del ADN parcialmente doble.
+      4) La ADN-polimerasa completa el ADN a cadena doble. 5) El ADN entra al núcleo. 6) Se transcribe a ARNm
+      mediante la ARN-polimerasa II del huésped. El genoma del VHB puede integrarse en los cromosomas de muchos
+      pacientes con carcinoma hepatocelular.
+    </div></details>
+    <details><summary>Transmisión (patogenia)</summary><div class="inner">
+      Parenteral, <b>sexual</b>, perinatal y contacto estrecho de convivencia. Presente en sangre, semen,
+      secreciones vaginales, saliva y leche materna. Incubación: 50-180 días.
+    </div></details>
+    <details><summary>Cuadro clínico y evolución</summary><div class="inner">
+      Fiebre moderada (menos frecuente), náuseas/vómitos (menos frecuentes), anorexia leve-moderada, artralgia/
+      artritis y rash/urticaria (habituales). Ictericia, orina oscura, malestar (95%), anorexia (90%),
+      náuseas (80%), dolor en CSD (60%), prurito (10%).<br><br>
+      <b>Evolución:</b> 90% cursa a curación, 1% hepatitis fulminante, 9% persiste HBsAg+ >6 meses (crónica) →
+      50% cura o queda como portador asintomático; el resto desarrolla hepatitis crónica persistente o activa,
+      pudiendo llevar a enfermedad extrahepática (poliarteritis nodosa, glomerulonefritis), cirrosis o carcinoma
+      hepatocelular.
+    </div></details>
+    <details><summary>Diagnóstico</summary><div class="inner">
+      Comienzo agudo con elevación marcada de transaminasas. La detección de <b>HBsAg</b> es suficiente para
+      diagnosticar; se complementa con <b>anti-HBc IgM</b> para confirmar infección aguda.
+    </div></details>
+    <details><summary>Tratamiento</summary><div class="inner">
+      Fase aguda: no requiere tratamiento específico, solo soporte (reposo relativo, evitar fármacos hepatotóxicos,
+      tratar el prurito).<br>
+      Fase crónica: <b>Interferón alfa-2b</b> 5 millones U/m² 3 veces/semana por 6 meses; <b>Lamivudina</b>
+      3 mg/kg/día.
+    </div></details>
+    <details><summary>Pronóstico, cronicidad y prevención</summary><div class="inner">
+      Pronóstico variable: infección inaparente/seroconversión asintomática, hepatitis fulminante, hepatitis
+      aguda sintomática, portador crónico, hepatitis crónica activa o persistente. La <b>cronicidad depende de
+      la edad</b> de adquisición. El riesgo de infectividad depende de HBsAg y HBeAg. Prevención: vacunación
+      universal (esquema de 3 dosis).
+    </div></details>
+  </div>
+  <div class="quiz" id="quiz-B"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 7. VIRUS HEPATOTROPOS (comparativo intermedio) -->
+<section class="view" id="v-hepatotropos">
+  <div class="eyebrow">Sección 7</div>
+  <h2 class="title">Virus Hepatotropos A–E (Comparación intermedia)</h2>
+  <table class="comp">
+    <tr><th></th><th>Hepatitis A</th><th>Hepatitis B</th><th>Hepatitis C</th><th>Hepatitis D</th><th>Hepatitis E</th></tr>
+    <tr><td>Familia</td><td>Picornaviridae</td><td>Hepadnaviridae</td><td>Flaviviridae</td><td>Delta (no clasificada)</td><td>Caliciviridae</td></tr>
+    <tr><td>Ácido nucleico</td><td>ARN ss (+)</td><td>ADN parcialmente bicatenario</td><td>ARN (+)</td><td>ARN (−)</td><td>ARN (+)</td></tr>
+    <tr><td>Patología</td><td>Hepatitis infecciosa</td><td>Hepatitis sérica</td><td>Hepatitis No-A no-B</td><td>Infección crónica / fulminante</td><td>Hepatitis entérica no-A no-B</td></tr>
+    <tr><td>Tamaño</td><td>~28 nm</td><td>~40 nm</td><td>30-60 nm</td><td>~40 nm (con envoltura de VHB)</td><td>30-35 nm</td></tr>
+    <tr><td>Envoltura</td><td>No</td><td>Sí</td><td>Sí</td><td>Sí</td><td>No</td></tr>
+    <tr><td>Transmisión</td><td>Fecal-oral</td><td>Parenteral, sexual, perinatal</td><td>Parenteral</td><td>Parenteral, sexual, perinatal</td><td>Fecal-oral</td></tr>
+    <tr><td>Incubación</td><td>15-50 días</td><td>30-180 días</td><td>15-160 días</td><td>30-180 días</td><td>14-60 días</td></tr>
+    <tr><td>Cronicidad</td><td>No</td><td>1-10% (niños), portador 1-30%</td><td>50-70%</td><td>Frecuente</td><td>No</td></tr>
+    <tr><td>Riesgo carcinoma</td><td>No</td><td>Sí</td><td>Sí</td><td>+/−</td><td>No</td></tr>
+  </table>
+  <p style="font-size:.85rem; margin-top:10px;">Nota: en pediatría, la cronicidad de VHB es mayor cuanto <b>menor</b> es la
+  edad de adquisición (ej. transmisión perinatal → alto riesgo de cronicidad).</p>
+  <div class="quiz" id="quiz-hepatotropos"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 8. HEPATITIS C -->
+<section class="view" id="v-hepC">
+  <div class="eyebrow">Sección 8</div>
+  <h2 class="title">Hepatitis C (VHC)</h2>
+  <div class="grid2">
+    <div class="diagram-panel">
+      <h3>Flavivirus — estructura</h3>
+      <svg viewBox="0 0 260 220">
+  <defs><clipPath id="capC"><circle cx="130" cy="110" r="42"/></clipPath></defs>
+
+  <circle cx="130" cy="110" r="76" fill="none" stroke="#1F6B75" stroke-width="1" stroke-dasharray="2,3" opacity=".5"/>
+  <line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="204.0" y1="110.0" x2="211.0" y2="110.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="211.0" cy="110.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="200.4" y1="132.9" x2="207.0" y2="135.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="207.0" cy="135.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="189.9" y1="153.5" x2="195.5" y2="157.6" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="195.5" cy="157.6" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="173.5" y1="169.9" x2="177.6" y2="175.5" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="177.6" cy="175.5" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="152.9" y1="180.4" x2="155.0" y2="187.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="155.0" cy="187.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="130.0" y1="184.0" x2="130.0" y2="191.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="130.0" cy="191.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="107.1" y1="180.4" x2="105.0" y2="187.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="105.0" cy="187.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="86.5" y1="169.9" x2="82.4" y2="175.5" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="82.4" cy="175.5" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="70.1" y1="153.5" x2="64.5" y2="157.6" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="64.5" cy="157.6" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="59.6" y1="132.9" x2="53.0" y2="135.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="53.0" cy="135.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="56.0" y1="110.0" x2="49.0" y2="110.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="49.0" cy="110.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="59.6" y1="87.1" x2="53.0" y2="85.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="53.0" cy="85.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="70.1" y1="66.5" x2="64.5" y2="62.4" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="64.5" cy="62.4" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="86.5" y1="50.1" x2="82.4" y2="44.5" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="82.4" cy="44.5" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="107.1" y1="39.6" x2="105.0" y2="33.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="105.0" cy="33.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="130.0" y1="36.0" x2="130.0" y2="29.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="130.0" cy="29.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="152.9" y1="39.6" x2="155.0" y2="33.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="155.0" cy="33.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="173.5" y1="50.1" x2="177.6" y2="44.5" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="177.6" cy="44.5" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="189.9" y1="66.5" x2="195.5" y2="62.4" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="195.5" cy="62.4" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+<line class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." x1="200.4" y1="87.1" x2="207.0" y2="85.0" stroke="#1F6B75" stroke-width="2.2"/>
+<circle class="part" data-t="c4x" data-desc="Glicoproteínas de envoltura E1/E2 (heterodímero): determinan el tropismo, contienen las regiones hipervariables HVR1-HVR2 y el sitio de unión al receptor CD81; blanco de anticuerpos neutralizantes." cx="207.0" cy="85.0" r="2.6" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1"/>
+  <circle id="c1x" class="part" data-t="c1x" cx="130" cy="110" r="74" fill="#9CC7CF" fill-opacity=".30" stroke="#1F6B75" stroke-width="2.6"
+    data-desc="Envoltura lipídica (bicapa) con las glicoproteínas E1/E2 insertadas; E2 se une al receptor CD81 del hepatocito para iniciar la infección."/>
+
+  <circle id="c2x" class="part" data-t="c2x" cx="130" cy="110" r="42" fill="#F0DDB0" stroke="#C98A2C" stroke-width="2.2"
+    data-desc="Core (nucleocápside): proteína estructural que empaqueta y protege el ARN genómico viral."/>
+  <g clip-path="url(#capC)">
+<line x1="130" y1="110" x2="172.0" y2="110.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="164.0" y2="134.7" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="143.0" y2="149.9" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="117.0" y2="149.9" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="96.0" y2="134.7" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="88.0" y2="110.0" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="96.0" y2="85.3" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="117.0" y2="70.1" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="143.0" y2="70.1" stroke="#5A3A0F33" stroke-width="1"/>
+<line x1="130" y1="110" x2="164.0" y2="85.3" stroke="#5A3A0F33" stroke-width="1"/>
+<circle cx="130" cy="110" r="14.0" fill="none" stroke="#5A3A0F33" stroke-width="1"/>
+<circle cx="130" cy="110" r="28.0" fill="none" stroke="#5A3A0F33" stroke-width="1"/>
+<circle cx="130" cy="110" r="42.0" fill="none" stroke="#5A3A0F33" stroke-width="1"/>
+</g>
+
+  <path id="c3x" class="part" data-t="c3x" d="M106 102 q30 -10 35 15 q3 20 -20 22 q-25 2 -22 -20Z" fill="#241715"
+    data-desc="ARN genómico lineal monocatenario (+), ~9400 nucleótidos, familia Flaviviridae; se traduce como una única poliproteína."/>
+  <path d="M114 108 q10 -4 20 0 M116 116 q10 4 20 0" stroke="#9CC7CF" stroke-width="1" fill="none" opacity=".6"/>
+
+  <text x="130" y="16" text-anchor="middle" font-size="8" fill="#1F6B75">Flavivirus · con envoltura · 30-60 nm</text>
+  <text x="130" y="206" text-anchor="middle" font-size="7.5" fill="#7E1F2B">6 genotipos mayores · reservorio humano</text>
+</svg>
+      <ul class="legend" id="leg-C"></ul>
+      <div class="desc-box" id="d-C">Toca una estructura 🔎</div>
+    </div>
+    <div class="diagram-panel">
+      <h3>Organización del genoma (ORF)</h3>
+      <svg viewBox="0 0 260 130">
+  <path d="M8 44 q4 -8 10 0 q4 8 -2 8 q-8 0 -8 -8Z" fill="none" stroke="#1F6B75" stroke-width="1.4"/>
+  <text x="13" y="34" font-size="6.5" text-anchor="middle">5'UTR</text>
+  <rect x="10" y="50" width="20" height="26" rx="3" fill="#C98A2C" class="part" data-t="g1" data-desc="Core: proteína de la nucleocápside, empaqueta el ARN genómico."/>
+  <text x="20.0" y="67" text-anchor="middle" font-size="7" fill="#241715">Core</text>
+  <rect x="30" y="50" width="16" height="26" rx="3" fill="#3F7A4D" class="part" data-t="g2" data-desc="E1: glicoproteína de envoltura, forma heterodímero con E2."/>
+  <text x="38.0" y="67" text-anchor="middle" font-size="7" fill="#241715">E1</text>
+  <rect x="46" y="50" width="16" height="26" rx="3" fill="#3F7A4D" class="part" data-t="g3" data-desc="E2: glicoproteína de envoltura; contiene HVR1/HVR2 y el sitio de unión a CD81."/>
+  <text x="54.0" y="67" text-anchor="middle" font-size="7" fill="#241715">E2</text>
+  <rect x="62" y="50" width="10" height="26" rx="3" fill="#9CC7CF" class="part" data-t="g4" data-desc="p7: proteína viroporina, forma un canal iónico necesario para el ensamblaje."/>
+  <text x="67.0" y="67" text-anchor="middle" font-size="7" fill="#241715">p7</text>
+  <rect x="72" y="50" width="18" height="26" rx="3" fill="#C0343F" class="part" data-t="g5" data-desc="NS2: autoproteasa (junto a NS3) que procesa la poliproteína."/>
+  <text x="81.0" y="67" text-anchor="middle" font-size="7" fill="#241715">NS2</text>
+  <rect x="90" y="50" width="40" height="26" rx="3" fill="#7E1F2B" class="part" data-t="g6" data-desc="NS3: serina proteasa + helicasa; esenciales para el procesamiento y replicación viral. Blanco de antivirales de acción directa."/>
+  <text x="110.0" y="67" text-anchor="middle" font-size="7" fill="#fff">NS3</text>
+  <rect x="130" y="50" width="16" height="26" rx="3" fill="#C98A2C" class="part" data-t="g7" data-desc="NS4A: cofactor indispensable de la proteasa NS3."/>
+  <text x="138.0" y="67" text-anchor="middle" font-size="7" fill="#241715">NS4A</text>
+  <rect x="146" y="50" width="18" height="26" rx="3" fill="#C98A2C" class="part" data-t="g8" data-desc="NS4B: induce la red de membranas donde ocurre la replicación viral."/>
+  <text x="155.0" y="67" text-anchor="middle" font-size="7" fill="#241715">NS4B</text>
+  <rect x="164" y="50" width="30" height="26" rx="3" fill="#9CC7CF" class="part" data-t="g9" data-desc="NS5A: contiene la ISDR (región determinante de sensibilidad al interferón); regula el ensamblaje."/>
+  <text x="179.0" y="67" text-anchor="middle" font-size="7" fill="#241715">NS5A</text>
+  <rect x="194" y="50" width="46" height="26" rx="3" fill="#241715" class="part" data-t="g10" data-desc="NS5B: ARN-polimerasa dependiente de ARN; enzima clave de la replicación, también blanco de antivirales."/>
+  <text x="217.0" y="67" text-anchor="middle" font-size="7" fill="#fff">NS5B</text>
+  <path d="M240 44 q4 -8 10 0 q4 8 -2 8 q-8 0 -8 -8Z" fill="none" stroke="#1F6B75" stroke-width="1.4"/>
+  <text x="245" y="34" font-size="6.5" text-anchor="middle">3'UTR</text>
+
+  <path d="M10 78 L240 78" stroke="#241715" stroke-width="1"/>
+  <text x="130" y="90" text-anchor="middle" font-size="7">Traducción como poliproteína única → clivaje proteolítico</text>
+
+  <path d="M10 100 L60 100" stroke="#3F7A4D" stroke-width="3"/>
+  <text x="35" y="112" text-anchor="middle" font-size="6.5" fill="#3F7A4D">Estructurales</text>
+  <path d="M65 100 L240 100" stroke="#7E1F2B" stroke-width="3"/>
+  <text x="150" y="112" text-anchor="middle" font-size="6.5" fill="#7E1F2B">No estructurales (replicación)</text>
+
+  <text x="130" y="16" text-anchor="middle" font-size="8">Genoma VHC: 5'UTR — ORF (poliproteína) — 3'UTR</text>
+</svg>
+      <ul class="legend" id="leg-Cg"></ul>
+      <div class="desc-box" id="d-Cg">Toca un segmento del genoma 🔎</div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <details open><summary>Generalidades y clasificación</summary><div class="inner">
+      6 genotipos mayores y numerosos subtipos. Familia <b>Flaviviridae</b>, género <b>Hepacivirus</b>; reservorio
+      humano; ARN monocatenario (+); con envoltura; icosaédrico. Genotipo 1 es el más frecuente en EE.UU./Europa;
+      genotipos 2 y 3 tienen mejor respuesta al tratamiento. En pacientes chilenos predomina el genotipo 1b (~76%).
+      Identificado en 1989 como "virus No-A No-B" (85% de esas hepatitis parenterales).
+    </div></details>
+    <details><summary>Epidemiología</summary><div class="inner">
+      >170 millones de personas con infección crónica en el mundo; 3-4 millones de casos nuevos al año.
+      Principal causa de hepatitis crónica junto al alcohol; ~300.000 muertes anuales. Chile: 80.000-120.000
+      infectados. Niños: 0.2% (<12 años) y 0.4% (12-19 años).
+    </div></details>
+    <details><summary>Transmisión y factores de riesgo</summary><div class="inner">
+      Parenteral (sangre/hemoderivados contaminados), uso de drogas IV (74% de los casos con factor de riesgo
+      identificado), transfusiones (14%), transmisión sexual (3.6%), perinatal, saliva/aseo personal.
+    </div></details>
+    <details><summary>Cuadro clínico y evolución</summary><div class="inner">
+      Incubación 2-26 semanas (promedio ~50 días). Infección aguda generalmente <b>asintomática</b>; hepatitis
+      clínica en 20-30%; fulminante muy rara; resolución espontánea en 15-45%. <b>60-85% evoluciona a infección
+      crónica</b>, con cirrosis en 15-20% a los 20-30 años; riesgo de carcinoma hepatocelular 1-4% anual; muerte
+      3.6% anual en cirróticos. En niños, 50-60% desarrolla infección persistente, mayoría asintomática.
+    </div></details>
+    <details><summary>Diagnóstico</summary><div class="inner">
+      Anti-VHC (screening, no distingue aguda/crónica/curada) → confirmación con PCR cualitativa (RNA) → PCR
+      cuantitativa (carga viral) → genotipificación (define duración del tratamiento).
+    </div></details>
+    <details><summary>Tratamiento</summary><div class="inner">
+      Objetivo: frenar la replicación viral y erradicar la infección (RNA-VHC indetectable 24 semanas post
+      tratamiento). Esquemas: Interferón solo → Interferón alfa-2b + ribavirina (contraindicada <2 años) →
+      Interferón pegilado + ribavirina. Efectivo en ~50% de los pacientes. Trasplante hepático en cirrosis
+      descompensada o carcinoma en etapa temprana (reinfección del injerto es habitual).
+    </div></details>
+    <details><summary>Prevención</summary><div class="inner">
+      No existe vacuna disponible (en investigación) ni gammaglobulina específica. Evaluación de sangre de
+      donantes, educación de personas en riesgo y programas de reducción de daños para usuarios de drogas IV.
+    </div></details>
+  </div>
+  <div class="quiz" id="quiz-C"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 9. HEPATITIS D -->
+<section class="view" id="v-hepD">
+  <div class="eyebrow">Sección 9</div>
+  <h2 class="title">Hepatitis D (VHD) — Agente Delta</h2>
+  <div class="grid2">
+    <div class="diagram-panel">
+      <h3>Virus defectuoso (requiere VHB)</h3>
+      <svg viewBox="0 0 280 220">
+  <line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="185.4" y1="121.2" x2="192.3" y2="122.2" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="192.3" cy="122.2" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="176.9" y1="145.5" x2="182.9" y2="149.1" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="182.9" cy="149.1" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="159.7" y1="164.7" x2="163.9" y2="170.3" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="163.9" cy="170.3" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="136.5" y1="175.9" x2="138.3" y2="182.7" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="138.3" cy="182.7" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="110.8" y1="177.4" x2="109.8" y2="184.3" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="109.8" cy="184.3" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="86.5" y1="168.9" x2="82.9" y2="174.9" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="82.9" cy="174.9" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="67.3" y1="151.7" x2="61.7" y2="155.9" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="61.7" cy="155.9" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="56.1" y1="128.5" x2="49.3" y2="130.3" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="49.3" cy="130.3" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="54.6" y1="102.8" x2="47.7" y2="101.8" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="47.7" cy="101.8" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="63.1" y1="78.5" x2="57.1" y2="74.9" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="57.1" cy="74.9" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="80.3" y1="59.3" x2="76.1" y2="53.7" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="76.1" cy="53.7" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="103.5" y1="48.1" x2="101.7" y2="41.3" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="101.7" cy="41.3" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="129.2" y1="46.6" x2="130.2" y2="39.7" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="130.2" cy="39.7" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="153.5" y1="55.1" x2="157.1" y2="49.1" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="157.1" cy="49.1" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="172.7" y1="72.3" x2="178.3" y2="68.1" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="178.3" cy="68.1" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+<line class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." x1="183.9" y1="95.5" x2="190.7" y2="93.7" stroke="#7E1F5A" stroke-width="2.2"/>
+<circle class="part" data-t="d1s" data-desc="Envoltura tomada PRESTADA del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)." cx="190.7" cy="93.7" r="2.6" fill="#D8A7D0" stroke="#7E1F5A" stroke-width="1"/>
+  <circle id="d1" class="part" data-t="d1" cx="120" cy="112" r="66" fill="#D8A7D0" fill-opacity=".30" stroke="#7E1F5A" stroke-width="2.6"
+    data-desc="Envoltura tomada prestada del VHB: incluye HBsAg, imprescindible para que el VHD sea infeccioso (virus defectuoso, no codifica proteínas de envoltura propias)."/>
+
+  <!-- ARN circular pequeño (genoma mas chico de virus humanos) -->
+  <circle id="d2" class="part" data-t="d2" cx="120" cy="112" r="26" fill="none" stroke="#241715" stroke-width="3"
+    data-desc="ARN circular monocatenario, polaridad NEGATIVA (~1.7 kb): el genoma más pequeño conocido entre los virus humanos; codifica solo el HDAg."/>
+  <circle cx="120" cy="112" r="26" fill="none" stroke="#241715" stroke-width="1" stroke-dasharray="2,2" opacity=".5"/>
+
+  <!-- HDAg -->
+  <circle id="d3" class="part" data-t="d3" cx="138" cy="98" r="7" fill="#7E1F2B" stroke="#5A1620" stroke-width="1.2"
+    data-desc="HDAg (antígeno Delta): único antígeno conocido del VHD; se asocia estrechamente al ARN formando la nucleocápside o 'core delta'."/>
+
+  <!-- flecha anotacion envoltura prestada -->
+  <path d="M190 72 q30 -10 46 4" stroke="#7E1F5A" stroke-width="1.4" fill="none" marker-end="url(#arrD)"/>
+  <defs><marker id="arrD" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#7E1F5A"/></marker></defs>
+  <text x="240" y="64" font-size="7.5" fill="#7E1F5A" text-anchor="middle">Envoltura</text>
+  <text x="240" y="74" font-size="7.5" fill="#7E1F5A" text-anchor="middle">= HBsAg (prestada</text>
+  <text x="240" y="84" font-size="7.5" fill="#7E1F5A" text-anchor="middle">del VHB)</text>
+
+  <text x="120" y="18" text-anchor="middle" font-size="8" fill="#7E1F5A">Agente Delta · ~35-37 nm · icosaédrico</text>
+  <text x="120" y="206" text-anchor="middle" font-size="7.5" fill="#7E1F2B">Virus defectuoso: necesita HBsAg (VHB) para ser infeccioso</text>
+</svg>
+      <ul class="legend" id="leg-D"></ul>
+      <div class="desc-box" id="d-D">Toca una estructura 🔎</div>
+    </div>
+    <div class="diagram-panel">
+      <h3>Coinfección vs Sobreinfección</h3>
+      <svg viewBox="0 0 260 175">
+  <rect id="ds1" class="part" data-t="ds1" x="15" y="30" width="105" height="120" rx="8" fill="#F6E7D8" stroke="#7E1F2B"
+    data-desc="Coinfección: VHB + VHD ingresan simultáneamente. Clínica similar a hepatitis B clásica, pero más grave, con curso bifásico posible. La cronicidad de B no aumenta por la coinfección."/>
+  <g transform="translate(50,14)">
+    <circle r="6" fill="#8FBF9C" stroke="#3F7A4D"/><circle cx="12" cy="0" r="6" fill="#D8A7D0" stroke="#7E1F5A"/>
+  </g>
+  <text x="67" y="45" text-anchor="middle" font-size="10">COINFECCIÓN</text>
+  <text x="67" y="65" text-anchor="middle" font-size="8">VHB + VHD</text>
+  <text x="67" y="80" text-anchor="middle" font-size="8">a la vez</text>
+  <text x="67" y="105" text-anchor="middle" font-size="8">Recuperación</text>
+  <text x="67" y="118" text-anchor="middle" font-size="8">frecuente</text>
+  <text x="67" y="138" text-anchor="middle" font-size="7.5" fill="#7E1F2B">Cronicidad de VHB: sin cambio</text>
+
+  <rect id="ds2" class="part" data-t="ds2" x="140" y="30" width="105" height="120" rx="8" fill="#E7B7B7" stroke="#7E1F2B"
+    data-desc="Sobreinfección: un portador crónico de VHB adquiere VHD. Hepatitis grave con evolución a cronicidad en casi todos los casos; mayor riesgo de cirrosis/carcinoma."/>
+  <g transform="translate(175,10)">
+    <circle r="6" fill="#8FBF9C" stroke="#3F7A4D"/>
+    <path d="M14 0 h10" stroke="#7E1F2B" stroke-width="1.2" marker-end="url(#arrT)"/>
+    <circle cx="30" cy="0" r="6" fill="#D8A7D0" stroke="#7E1F5A"/>
+  </g>
+  <defs><marker id="arrT" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7E1F2B"/></marker></defs>
+  <text x="192" y="45" text-anchor="middle" font-size="10">SOBREINFECCIÓN</text>
+  <text x="192" y="65" text-anchor="middle" font-size="8">Portador VHB</text>
+  <text x="192" y="80" text-anchor="middle" font-size="8">+ VHD nuevo</text>
+  <text x="192" y="105" text-anchor="middle" font-size="8">Cronicidad</text>
+  <text x="192" y="118" text-anchor="middle" font-size="8">casi siempre</text>
+  <text x="192" y="138" text-anchor="middle" font-size="7.5" fill="#7E1F2B">↑ riesgo cirrosis/carcinoma</text>
+</svg>
+      <ul class="legend" id="leg-Ds"></ul>
+      <div class="desc-box" id="d-Ds">Toca un recuadro 🔎</div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <details open><summary>Generalidades y clasificación</summary><div class="inner">
+      VHD: virus ARN monocatenario negativo, circular, incompleto y defectuoso — <b>necesita al VHB</b>
+      (HBsAg positivo) para ser infectante. "Agente delta", familia no clasificada. 5% de los infectados
+      crónicos de VHB también portan VHD (~15 millones de personas).
+    </div></details>
+    <details><summary>Vía de infección e incubación</summary><div class="inner">
+      Vertical, parenteral (transfusiones), percutánea (drogadictos, trabajadores de salud), inoculación por
+      mucosas (sexual). Incubación: coinfección 45-160 días; sobreinfección 4-8 semanas.
+    </div></details>
+    <details><summary>Epidemiología</summary><div class="inner">
+      Endémico en la cuenca del Mediterráneo (sur de Italia), Lejano Oriente, islas del Pacífico y algunas
+      regiones de Sudamérica. El VHD inhibe la replicación del VHB, por lo que la hepatopatía en portadores
+      coinfectados suele deberse principalmente al VHD.
+    </div></details>
+    <details><summary>Cuadro clínico</summary><div class="inner">
+      Fiebre, náuseas/vómitos, anorexia, malestar general, artralgias, rash, dolor abdominal, fatiga — sin
+      rasgos distintivos, salvo mayor gravedad. Los casos más graves resultan de la coinfección. En niños es
+      poco común, pero debe sospecharse ante falla hepática. La infección crónica produce daño citopático
+      directo (fase aguda) y daño inmunomediado (fase crónica), asociándose a cirrosis y carcinoma
+      hepatocelular con evolución más rápida que la hepatitis B sola.
+    </div></details>
+    <details><summary>Diagnóstico</summary><div class="inner">
+      Requiere presencia de HBsAg. Sospechar en: hepatitis B aguda grave, poblaciones de riesgo o países
+      endémicos; hepatitis aguda en portador de HBsAg; hepatitis crónica por VHB con actividad inflamatoria y
+      HBeAg negativo o bajos niveles de ADN-VHB. Detección: anticuerpos totales anti-VHD (IgM+IgG), ARN por
+      PCR/hibridación; HDAg circula en complejo con anticuerpos (no se detecta de rutina).
+    </div></details>
+    <details><summary>Tratamiento y prevención</summary><div class="inner">
+      Objetivo: erradicar VHD y VHB. Fármacos dirigidos solo al VHB (ej. lamivudina) no han sido exitosos
+      porque el VHD suele inhibir la replicación del VHB. Se usa Interferón alfa en dosis altas por períodos
+      prolongados (≥1 año). La mejor estrategia de control es la <b>prevención de la hepatitis B mediante
+      vacunación</b>. No existen medidas preventivas específicas para la sobreinfección por VHD.
+    </div></details>
+  </div>
+  <div class="quiz" id="quiz-D"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 10. HEPATITIS E -->
+<section class="view" id="v-hepE">
+  <div class="eyebrow">Sección 10</div>
+  <h2 class="title">Hepatitis E (VHE)</h2>
+  <div class="grid2">
+    <div class="diagram-panel">
+      <h3>Calicivirus — estructura</h3>
+      <svg viewBox="0 0 260 200">
+  <circle cx="130" cy="100" r="60" fill="none" stroke="#7E1F2B" stroke-width="1" stroke-dasharray="2,3" opacity=".4"/>
+  <circle id="e1" class="part" data-t="e1" cx="130" cy="100" r="55" fill="#F8ECEC" stroke="#7E1F2B" stroke-width="3"
+    data-desc="Cápside icosaédrica SIN envoltura, 30-35 nm, con depresiones en forma de copa en su superficie (de ahí 'Calicivirus', del latín calyx = copa). Un solo serotipo, 4 genotipos conocidos."/>
+  <circle cx="180.2" cy="100.0" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="173.5" cy="125.1" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="155.1" cy="143.5" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="130.0" cy="150.2" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="104.9" cy="143.5" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="86.5" cy="125.1" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="79.8" cy="100.0" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="86.5" cy="74.9" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="104.9" cy="56.5" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="130.0" cy="49.8" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="155.1" cy="56.5" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+<circle cx="173.5" cy="74.9" r="8.0" fill="none" stroke="#7E1F2B" stroke-width="1.3"/>
+
+  <path id="e2" class="part" data-t="e2" d="M110 90 q15 -18 30 -8 q12 8 0 22 q-12 12 -25 3 q-10 -8 -5 -17Z" fill="#241715"
+    data-desc="Genoma ARN monocatenario de polaridad positiva; capping en 5' y poliadenilado en 3' (similar a Calicivirus)."/>
+
+  <text x="130" y="16" text-anchor="middle" font-size="8" fill="#7E1F2B">Calicivirus · sin envoltura · 30-35 nm</text>
+  <text x="130" y="175" text-anchor="middle" font-size="9">Distribución etaria: 14-30 años</text>
+  <text x="130" y="190" text-anchor="middle" font-size="9" fill="#7E1F2B">Mortalidad hasta 20% en embarazadas</text>
+</svg>
+      <ul class="legend" id="leg-E"></ul>
+      <div class="desc-box" id="d-E">Toca la estructura 🔎</div>
+    </div>
+    <div class="diagram-panel">
+      <h3>Ruta de transmisión</h3>
+      <svg viewBox="0 0 260 150">
+  <path d="M40 100 q30 -55 90 -44 q60 11 90 44" stroke="#1F6B75" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <g id="ee1group">
+  <ellipse cx="40" cy="105" rx="20" ry="14" fill="#9CC7CF" stroke="#1F6B75" stroke-width="1.6" class="part" data-t="ee1"
+    data-desc="Agua contaminada con materia fecal: principal vehículo de transmisión (fecal-oral); típico en brotes epidémicos asociados a agua de consumo o post-desastres."/>
+  <path d="M30 100 q5 -6 10 0 q5 6 10 0" stroke="#1F6B75" stroke-width="1.4" fill="none"/>
+  </g>
+  <text x="40" y="128" text-anchor="middle" font-size="8">Agua/alimentos</text>
+
+  <ellipse cx="130" cy="60" rx="16" ry="11" fill="#F0DDB0" stroke="#C98A2C" stroke-width="1.4"/>
+  <text x="130" y="64" text-anchor="middle" font-size="7">Intestino</text>
+
+  <g id="ee2group">
+  <path d="M205 60c9-20 36-24 56-12 24 14 24 36 12 48-12 13-40 16-56 5C204 90 199 76 205 60Z"
+    fill="#C0343F" stroke="#5A1620" stroke-width="2" class="part" data-t="ee2"
+    data-desc="Hígado: sitio de replicación; el curso es benigno y NO evoluciona a cronicidad, salvo formas fulminantes raras (graves especialmente en el embarazo)."/>
+  </g>
+  <text x="228" y="128" text-anchor="middle" font-size="8">Hígado</text>
+  <path d="M148 62 Q175 55 200 60" stroke="#7E1F2B" stroke-width="1.4" fill="none" marker-end="url(#arrE)"/>
+  <defs><marker id="arrE" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7E1F2B"/></marker></defs>
+</svg>
+      <ul class="legend" id="leg-Ee"></ul>
+      <div class="desc-box" id="d-Ee">Toca un punto de la ruta 🔎</div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;">
+    <details open><summary>Generalidades</summary><div class="inner">
+      VHE: virus ARN de cadena única, <b>Calicivirus</b>, 1 solo serotipo, 4 genotipos. Afecta principalmente
+      entre los 14 y 30 años. <b>Mortalidad alta en embarazadas (>20%)</b>. Transmisión entérica por agua
+      contaminada con materia fecal. Incubación: 15-60 días (promedio 40 días). Curso benigno, <b>no
+      evoluciona a cronicidad</b>.
+    </div></details>
+    <details><summary>Cuadro clínico</summary><div class="inner">
+      Síntomas comparables a los de VHA: ictericia, hepatomegalia, anorexia, malestar general, fatiga, dolor
+      abdominal, náuseas, vómito, fiebre. Puede variar hacia una forma fulminante. Infección frecuente en
+      niños, con frecuencia asintomática y anictérica.
+    </div></details>
+    <details><summary>Diagnóstico</summary><div class="inner">
+      Detección de anticuerpos: <b>anti-VHE IgM</b> y <b>anti-VHE IgG</b>. El ARN viral se detecta en suero
+      mediante PCR (RCP).
+    </div></details>
+  </div>
+  <div class="quiz" id="quiz-E"><h4>🎮 Reto rápido</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 11. COMPARACIÓN FINAL -->
+<section class="view" id="v-comparacion">
+  <div class="eyebrow">Sección 11</div>
+  <h2 class="title">Tabla Comparativa General A-E</h2>
+  <table class="comp">
+    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr>
+    <tr><td>Agente</td><td>Picornavirus/Heparnavirus</td><td>Hepadnavirus</td><td>Flavivirus/Hepacivirus</td><td>Virus delta</td><td>Calicivirus</td></tr>
+    <tr><td>Antíg./Ac.</td><td>HAV / anti-HAV</td><td>HBsAg,HBcAg,HBeAg / anti-HBs,anti-HBc,anti-HBe</td><td>HCV / anti-HCV</td><td>HBsAg,Ag-HDV / anti-HBs y anti-HDV</td><td>Ag-HEV / anti-HEV</td></tr>
+    <tr><td>Transmisión</td><td>Fecal-oral</td><td>Parenteral, sexual, perinatal</td><td>Parenteral</td><td>Parenteral, sexual, perinatal</td><td>Fecal-oral</td></tr>
+    <tr><td>Incubación (días)</td><td>15-50</td><td>30-180</td><td>15-160</td><td>30-180</td><td>14-60</td></tr>
+    <tr><td>Edad típica</td><td>Niños</td><td>Adultos jóvenes</td><td>Cualquier edad</td><td>Cualquier edad</td><td>Adultos jóvenes</td></tr>
+    <tr><td>Cronicidad</td><td>No</td><td>1-10%</td><td>50-70%</td><td>Frecuente</td><td>No</td></tr>
+    <tr><td>Portador</td><td>—</td><td>1-30%</td><td>0.5-3.2%</td><td>Variable</td><td>—</td></tr>
+    <tr><td>Riesgo carcinoma</td><td>—</td><td>Sí (>neonatal)</td><td>Sí</td><td>+/−</td><td>—</td></tr>
+    <tr><td>Vacuna disponible</td><td>Sí</td><td>Sí</td><td>No (investigación)</td><td>Indirecta (vía vacuna VHB)</td><td>No (uso limitado)</td></tr>
+  </table>
+
+  <div class="quiz" id="quiz-comparacion"><h4>🎮 Empareja el virus con su familia</h4><div class="qbody"></div></div>
+</section>
+
+<!-- 12. RETO FINAL -->
+<section class="view" id="v-reto">
+  <div class="eyebrow">Sección 12</div>
+  <h2 class="title">Reto Final — Pon a prueba todo lo aprendido</h2>
+  <p class="lead">Responde las siguientes preguntas para completar tu nivel de inmunidad. ¡Suerte!</p>
+  <div class="quiz" id="quiz-final"><h4>🏆 Desafío final</h4><div class="qbody"></div></div>
+  <p class="footer-note">Contenido elaborado a partir del material "Hepatitis Virales en Pediatría" (Medicina UCSC)
+   y apuntes de cátedra. Con fines educativos.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ============ NAV ============ */
+const SECTIONS = [
+  {id:'intro', label:'Introducción General'},
+  {id:'clasif', label:'Clasificación'},
+  {id:'variantes', label:'Variantes Clínicas'},
+  {id:'manif', label:'Manifestaciones'},
+  {id:'hepA', label:'Hepatitis A'},
+  {id:'hepB', label:'Hepatitis B'},
+  {id:'hepatotropos', label:'Virus Hepatotropos'},
+  {id:'hepC', label:'Hepatitis C'},
+  {id:'hepD', label:'Hepatitis D'},
+  {id:'hepE', label:'Hepatitis E'},
+  {id:'comparacion', label:'Comparación Final'},
+  {id:'reto', label:'Reto Final'},
+];
+const navlist = document.getElementById('navlist');
+SECTIONS.forEach((s,i)=>{
+  const b = document.createElement('button');
+  b.innerHTML = '<span class="num">'+String(i+1).padStart(2,'0')+'</span> '+s.label;
+  b.dataset.id = s.id;
+  b.addEventListener('click', ()=> showView(s.id));
+  navlist.appendChild(b);
+});
+function showView(id){
+  document.querySelectorAll('section.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('v-'+id).classList.add('active');
+  document.querySelectorAll('#navlist button').forEach(b=>b.classList.toggle('active', b.dataset.id===id));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+showView('intro');
+
+/* ============ interactive diagrams ============ */
+// Build legend lists + click handlers for every diagram with .part elements
+function buildLegend(svgSelectorRoot, legendId, descId){
+  const root = document.querySelector(svgSelectorRoot);
+  if(!root) return;
+  const parts = root.querySelectorAll('.part');
+  const seen = {};
+  const legend = document.getElementById(legendId);
+  let n = 1;
+  parts.forEach(p=>{
+    const key = p.dataset.t;
+    if(seen[key]) return;
+    seen[key] = n;
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.innerHTML = '<span class="n">'+n+'</span> '+shortLabel(p.dataset.desc);
+    btn.addEventListener('click', ()=> selectPart(root, key, p.dataset.desc, legend, btn));
+    li.appendChild(btn);
+    legend.appendChild(li);
+    n++;
+  });
+  parts.forEach(p=>{
+    p.addEventListener('click', ()=>{
+      const btn = [...legend.querySelectorAll('button')][ (function(){
+        let idx=0, count=0, target=-1;
+        const seen2={};
+        root.querySelectorAll('.part').forEach(pp=>{
+          if(!seen2[pp.dataset.t]){ seen2[pp.dataset.t]=count; count++; }
+          if(pp===p) target = seen2[pp.dataset.t];
+        });
+        return target;
+      })() ];
+      selectPart(root, p.dataset.t, p.dataset.desc, legend, btn);
+    });
+  });
+  function selectPart(root, key, desc, legend, btn){
+    root.querySelectorAll('.part').forEach(pp=> pp.classList.toggle('sel', pp.dataset.t===key));
+    legend.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+    if(btn) btn.classList.add('sel');
+    document.getElementById(descId).textContent = desc;
+  }
+}
+function shortLabel(txt){
+  const first = txt.split(/[:.]/)[0];
+  return first.length>26 ? first.slice(0,24)+'…' : first;
+}
+
+// register all diagrams: [svg parent selector, legend ul id, desc box id]
+[
+ ['#v-intro svg:nth-of-type(1)','leg-intro','d-intro'],
+ ['#v-intro svg:nth-of-type(2)','leg-intro2','d-intro2'],
+ ['#v-clasif svg:nth-of-type(1)','leg-clasif','d-clasif'],
+ ['#v-clasif svg:nth-of-type(2)','leg-clasif2','d-clasif2'],
+ ['#v-variantes svg','leg-var','d-var'],
+ ['#v-manif svg','leg-manif','d-manif'],
+ ['#v-hepA svg:nth-of-type(1)','leg-A','d-A'],
+ ['#v-hepA svg:nth-of-type(2)','leg-Ap','d-Ap'],
+ ['#v-hepB svg:nth-of-type(1)','leg-B','d-B'],
+ ['#v-hepC svg:nth-of-type(1)','leg-C','d-C'],
+ ['#v-hepC svg:nth-of-type(2)','leg-Cg','d-Cg'],
+ ['#v-hepD svg:nth-of-type(1)','leg-D','d-D'],
+ ['#v-hepD svg:nth-of-type(2)','leg-Ds','d-Ds'],
+ ['#v-hepE svg:nth-of-type(1)','leg-E','d-E'],
+ ['#v-hepE svg:nth-of-type(2)','leg-Ee','d-Ee'],
+].forEach(cfg=> buildLegend(cfg[0], cfg[1], cfg[2]));
+
+/* ============ QUIZ ENGINE ============ */
+let SCORE = 0, TOTAL = 0;
+function updateScore(){
+  document.getElementById('scoretxt').textContent = SCORE+' / '+TOTAL+' aciertos';
+  const pct = TOTAL? SCORE/TOTAL : 0;
+  const h = Math.max(4, pct*66); // fill height inside 0..~66 units of the liver box (100 tall)
+  document.getElementById('liverFill').setAttribute('y', 100-h);
+  document.getElementById('liverFill').setAttribute('height', h);
+}
+function renderQuiz(containerId, questions){
+  const box = document.querySelector('#'+containerId+' .qbody');
+  questions.forEach((q,qi)=>{
+    const div = document.createElement('div');
+    div.className='qitem';
+    const p = document.createElement('p'); p.textContent=(qi+1)+'. '+q.q;
+    div.appendChild(p);
+    const opts = document.createElement('div'); opts.className='qopts';
+    const fb = document.createElement('div'); fb.className='qfeedback';
+    q.o.forEach((optText, oi)=>{
+      const btn = document.createElement('button');
+      btn.textContent = optText;
+      btn.addEventListener('click', ()=>{
+        if(btn.disabled) return;
+        TOTAL++;
+        const buttons = [...opts.querySelectorAll('button')];
+        buttons.forEach(b=>b.disabled=true);
+        if(oi===q.c){
+          btn.classList.add('correct'); SCORE++;
+          fb.textContent = '✅ ¡Correcto! '+ (q.exp||'');
+        }else{
+          btn.classList.add('wrong');
+          buttons[q.c].classList.add('correct');
+          fb.textContent = '❌ La respuesta correcta era: "'+q.o[q.c]+'". '+(q.exp||'');
+        }
+        updateScore();
+      });
+      opts.appendChild(btn);
+    });
+    div.appendChild(opts); div.appendChild(fb);
+    box.appendChild(div);
+  });
+}
+
+/* ---------- Quiz content per section ---------- */
+renderQuiz('quiz-intro', [
+ {q:'¿Qué caracteriza a la hepatitis según su definición general?', o:['Inflamación y necrosis de hepatocitos','Fractura ósea difusa','Vasculitis pulmonar'], c:0},
+ {q:'Un virus "hepatotropo" se caracteriza por:', o:['No afectar nunca al hígado','Tener afinidad primaria por el hígado','Ser siempre bacteriano'], c:1, exp:'VHA-VHE tienen tropismo primario hepático.'},
+ {q:'¿Cuál de estos es un virus NO hepatotropo que puede afectar secundariamente al hígado?', o:['Epstein-Barr','Hepatitis B','Hepatitis A'], c:0},
+]);
+
+renderQuiz('quiz-clasif', [
+ {q:'La hepatitis alcohólica se clasifica como:', o:['Infecciosa','Tóxica','Autoinmune'], c:1},
+ {q:'¿A qué familia pertenece el virus de la Hepatitis C?', o:['Picornaviridae','Hepadnaviridae','Flaviviridae'], c:2},
+ {q:'¿Cuál virus pertenece al género "Delta"?', o:['VHD','VHA','VHE'], c:0},
+]);
+
+renderQuiz('quiz-var', [
+ {q:'¿Cuál variante clínica es poco frecuente en niños?', o:['Colestásica','Clásica','Bifásica'], c:0},
+ {q:'La forma más grave, con necrosis hepática masiva, se llama:', o:['Bifásica','Fulminante','Clásica'], c:1},
+ {q:'En la fase ictérica se espera encontrar:', o:['Resolución total de síntomas','Coluria y aumento de bilirrubina','Ausencia de síntomas'], c:1},
+]);
+
+renderQuiz('quiz-manif', [
+ {q:'¿Qué porcentaje de niños presenta ictericia en la hepatitis viral?', o:['~20%','~80%','100%'], c:0},
+ {q:'La ictericia se debe principalmente a:', o:['Acumulación de bilirrubina','Exceso de glucosa','Déficit de hierro'], c:0},
+]);
+
+renderQuiz('quiz-A', [
+ {q:'¿A qué familia pertenece el VHA?', o:['Picornaviridae','Hepadnaviridae','Caliciviridae'], c:0},
+ {q:'¿Cuál es la vía de transmisión principal del VHA?', o:['Fecal-oral','Sexual','Transfusional'], c:0},
+ {q:'¿El VHA tiene envoltura?', o:['Sí','No'], c:1},
+ {q:'¿Cuál es el tratamiento específico para la Hepatitis A?', o:['Interferón obligatorio','No existe, es autolimitada','Trasplante hepático'], c:1},
+ {q:'El receptor celular usado por el VHA para infectar hepatocitos es:', o:['CD81','HAV-CR1','HBsAg'], c:1},
+]);
+
+renderQuiz('quiz-B', [
+ {q:'¿Qué marcador indica alta infectividad y replicación activa en Hepatitis B?', o:['Anti-HBs','HBeAg','Anti-HAV'], c:1},
+ {q:'La detección de HBsAg + Anti-HBc IgM sugiere:', o:['Vacunación','Infección aguda','Curación'], c:1},
+ {q:'¿Qué porcentaje de casos agudos de Hepatitis B evoluciona a hepatitis fulminante?', o:['~1%','~50%','~90%'], c:0},
+ {q:'Fármaco usado en Hepatitis B crónica:', o:['Ribavirina obligatoria','Interferón alfa-2b','Vacuna terapéutica'], c:1},
+]);
+
+renderQuiz('quiz-hepatotropos', [
+ {q:'¿Cuál virus hepatotropo NO tiene envoltura?', o:['VHB','VHA y VHE','VHD'], c:1},
+ {q:'¿Cuál tiene mayor tasa de cronicidad?', o:['VHA','VHC','VHE'], c:1},
+ {q:'¿Cuál se transmite por vía fecal-oral?', o:['VHB y VHC','VHA y VHE','VHD'], c:1},
+]);
+
+renderQuiz('quiz-C', [
+ {q:'¿A qué familia pertenece el VHC?', o:['Flaviviridae','Picornaviridae','Delta'], c:0},
+ {q:'¿Qué porcentaje de infectados agudos evoluciona a infección crónica por VHC?', o:['5-10%','60-85%','100%'], c:1},
+ {q:'La enzima clave para la replicación del VHC (ARN-polimerasa) corresponde a:', o:['NS5B','Core','E2'], c:0},
+ {q:'¿Existe vacuna disponible para Hepatitis C?', o:['Sí, desde 1990','No, aún en investigación','Sí, obligatoria en niños'], c:1},
+]);
+
+renderQuiz('quiz-D', [
+ {q:'El VHD necesita obligatoriamente la presencia de:', o:['VHA','HBsAg (VHB)','VHC'], c:1},
+ {q:'La sobreinfección (portador VHB + VHD nuevo) tiende a:', o:['Curar espontáneamente siempre','Evolucionar a cronicidad en casi todos los casos','No causar ningún síntoma'], c:1},
+ {q:'La mejor estrategia de control de Hepatitis D es:', o:['Vacunar contra VHB','Antibióticos','Dieta especial'], c:0},
+]);
+
+renderQuiz('quiz-E', [
+ {q:'¿En qué grupo la Hepatitis E tiene alta mortalidad (>20%)?', o:['Embarazadas','Lactantes','Adultos mayores sanos'], c:0},
+ {q:'La vía de transmisión del VHE es:', o:['Parenteral','Fecal-oral (agua contaminada)','Sexual exclusiva'], c:1},
+ {q:'¿La Hepatitis E evoluciona a cronicidad?', o:['Sí, siempre','No, es benigna y no cronifica','Solo en hombres'], c:1},
+]);
+
+renderQuiz('quiz-comparacion', [
+ {q:'¿Cuál virus de hepatitis es de ADN?', o:['VHB','VHC','VHE'], c:0},
+ {q:'¿Cuáles NO tienen envoltura?', o:['VHA y VHE','VHB y VHD','VHC y VHD'], c:0},
+ {q:'¿Cuál tiene mayor riesgo de evolucionar a carcinoma hepatocelular?', o:['VHA','VHB y VHC','VHE'], c:1},
+]);
+
+renderQuiz('quiz-final', [
+ {q:'La hepatitis se define, en parte, como una enfermedad que se supera con:', o:['Antibióticos siempre','Erradicación del virus y desarrollo de inmunidad','Cirugía'], c:1},
+ {q:'¿Qué virus de hepatitis requiere obligatoriamente coinfección con otro virus?', o:['VHD (necesita VHB)','VHA','VHC'], c:0},
+ {q:'¿Cuál de estas vías es propia de VHA y VHE?', o:['Fecal-oral','Parenteral','Vertical'], c:0},
+ {q:'El marcador HBsAg detectado por más de 6 meses sugiere:', o:['Curación total','Cronicidad','Vacunación reciente'], c:1},
+ {q:'¿Cuál genotipo de VHC responde mejor al tratamiento clásico?', o:['1','2 y 3','4'], c:1},
+ {q:'La variante clínica con necrosis hepática masiva se llama:', o:['Colestásica','Fulminante','Bifásica'], c:1},
+ {q:'¿Qué célula hepática puede alojar al VHA además del hepatocito?', o:['Célula de Kupffer','Neurona','Osteocito'], c:0},
+ {q:'La familia Caliciviridae corresponde a:', o:['Hepatitis E','Hepatitis B','Hepatitis D'], c:0},
+]);
+
+updateScore();
+</script>
+</body>
+</html>

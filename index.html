@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedyG - Inspirado en Minijuegos</title>
+    <style>
+        /* --- Configuración General del Fondo --- */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f3f3; /* Gris claro de fondo, típico de minijuegos */
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Barra Superior (Header) --- */
+        header {
+            background-color: #1c1e22; /* Gris oscuro/antracita de la plataforma */
+            color: #ffffff;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid #ffcc00; /* Detalle amarillo/dorado característico */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-area {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .logo-area span {
+            color: #ffcc00; /* Color de acento para simular el logo */
+        }
+
+        /* --- Contenedor Principal con Disposición de Minijuegos --- */
+        .main-container {
+            display: flex;
+            flex: 1;
+        }
+
+        /* --- Barra Lateral Izquierda (Menú de Categorías) --- */
+        nav {
+            width: 220px;
+            background-color: #252830; /* Tono ligeramente más claro que el header */
+            padding: 20px 10px;
+            box-sizing: border-box;
+            border-right: 1px solid #3a3f4d;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        nav ul li {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            color: #b0b5c1;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        nav ul li:hover {
+            background-color: #3a3f4d;
+            color: #ffffff;
+        }
+
+        /* --- Área de Contenido Principal --- */
+        main {
+            flex: 1;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        /* Contenedor estilo "Grid de Juegos" */
+        .content-section {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1c1e22;
+            border-left: 5px solid #ffcc00;
+            padding-left: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">👑 MEDY<span>G</span></div>
+        <div style="color: #b0b5c1; font-size: 14px;">Panel de Control</div>
+    </header>
+
+    <div class="main-container">
+        
+        <nav>
+            <ul>
+                <li>🏠 Inicio</li>
+                <li>📊 Panel Médico</li>
+                <li>🔬 Casos Clínicos</li>
+                <li>📝 Ajustes</li>
+            </ul>
+        </nav>
+
+        <main>
+            <div class="content-section">
+                <h2>Sección Principal</h2>
+                <p>Este contenedor simula el espacio limpio y ordenado donde minijuegos muestra sus cuadrículas de juegos, adaptado para la interfaz de tu aplicación web.</p>
+            </div>
+        </main>
+
+    </div>
+
+</body>
+</html>

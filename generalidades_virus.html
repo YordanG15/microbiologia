@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virión | Atlas Interactivo de Virología General</title>
+<style>
+:root{
+  --bg:#04070d;
+  --panel:#0c1220;
+  --panel2:#111a2e;
+  --line:#1e2b45;
+  --ink:#e7edf7;
+  --ink-dim:#93a3bf;
+  --core:#f5b942;      /* genoma / core */
+  --capsid:#3ba3ff;    /* capside */
+  --envelope:#ff5da2;  /* envoltura */
+  --matrix:#7c5cff;    /* matriz */
+  --ok:#33d69f;
+  --bad:#ff5d5d;
+  --warn:#f5b942;
+  --font-display:'Georgia','Iowan Old Style',serif;
+  --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',Consolas,Monaco,monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse at 15% 0%, #0d1830 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 100%, #170a24 0%, transparent 50%),
+    var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  min-height:100vh;
+}
+::selection{background:var(--capsid);color:#04070d;}
+
+/* ---------- layout shell ---------- */
+.app{display:flex;min-height:100vh;}
+.sidebar{
+  width:266px;flex-shrink:0;
+  background:linear-gradient(180deg,#070b14,#0a0f1c);
+  border-right:1px solid var(--line);
+  padding:22px 14px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{padding:0 8px 18px 8px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+.brand .mark{font-family:var(--font-display);font-size:1.65rem;letter-spacing:.5px;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.brand .mark svg{flex-shrink:0;}
+.brand .sub{font-size:.72rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:1.6px;margin-top:4px;}
+
+.navgroup-title{font-size:.66rem;text-transform:uppercase;letter-spacing:1.4px;color:#4d5b78;margin:16px 10px 6px;}
+.navbtn{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:transparent;border:none;color:var(--ink-dim);
+  padding:9px 10px;border-radius:8px;cursor:pointer;font-size:.86rem;
+  font-family:var(--font-body);margin-bottom:2px;transition:background .15s,color .15s;
+}
+.navbtn:hover{background:#111c33;color:var(--ink);}
+.navbtn.active{background:#132340;color:var(--ink);box-shadow:inset 3px 0 0 var(--capsid);}
+.navbtn .num{font-family:var(--font-mono);font-size:.68rem;color:#4d5b78;width:18px;flex-shrink:0;}
+.navbtn.active .num{color:var(--capsid);}
+
+.main{flex:1;min-width:0;padding:34px 44px 90px;max-width:1180px;}
+@media (max-width:980px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--line);}
+  .main{padding:24px 18px 60px;max-width:100%;}
+}
+
+.page{display:none;animation:fadein .3s ease;}
+.page.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--capsid);margin-bottom:6px;}
+h1.page-title{font-family:var(--font-display);font-size:2.1rem;margin:0 0 6px;font-weight:600;}
+.page-lead{color:var(--ink-dim);font-size:1rem;max-width:760px;line-height:1.55;margin-bottom:26px;}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:22px;}
+.card h2{font-family:var(--font-display);font-size:1.3rem;margin:0 0 12px;color:var(--ink);}
+.card h3{font-size:1rem;color:var(--capsid);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.6px;font-family:var(--font-body);font-weight:700;}
+.card p{line-height:1.65;color:#c9d3e6;}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start;}
+.split.mm{grid-template-columns:0.9fr 1.1fr;}
+@media (max-width:900px){.split,.split.mm{grid-template-columns:1fr;}}
+
+.stage{
+  background:radial-gradient(circle at 50% 40%, #0b1120 0%, #04070d 75%);
+  border:1px solid var(--line);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  min-height:360px;position:relative;overflow:hidden;padding:10px;
+}
+.stage .tag{position:absolute;top:10px;left:12px;font-family:var(--font-mono);font-size:.68rem;color:#4d5b78;letter-spacing:1px;text-transform:uppercase;}
+.stage svg{width:100%;height:auto;max-height:420px;}
+.zone{cursor:pointer;transition:filter .2s ease, opacity .2s ease, transform .2s ease;}
+.zone:hover{filter:brightness(1.35);}
+.est-zone.active-zone{filter:url(#glowFx) brightness(1.25);}
+.zone-label{font-size:11px;fill:#c9d3e6;font-family:var(--font-body);pointer-events:none;}
+
+.info-panel{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:20px 22px;min-height:360px;}
+.info-panel h4{margin:0 0 8px;font-size:1.05rem;color:var(--ink);}
+.info-panel p{font-size:.92rem;line-height:1.6;color:#c9d3e6;margin:0 0 10px;}
+.info-panel .placeholder{color:#5a6786;font-style:italic;font-size:.9rem;}
+
+.chipbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.chip{
+  border:1px solid var(--line);background:#0e1728;color:var(--ink-dim);
+  padding:7px 13px;border-radius:999px;font-size:.8rem;cursor:pointer;
+  transition:all .15s;font-family:var(--font-body);
+}
+.chip:hover{border-color:var(--capsid);color:var(--ink);}
+.chip.active{background:var(--capsid);color:#04070d;border-color:var(--capsid);font-weight:700;}
+.chip.a-envelope.active{background:var(--envelope);border-color:var(--envelope);}
+.chip.a-core.active{background:var(--core);border-color:var(--core);}
+.chip.a-matrix.active{background:var(--matrix);border-color:var(--matrix);}
+
+.tag-hi{font-weight:700;}
+.hi-biochem{color:#f5b942;}
+.hi-micro{color:#33d69f;}
+.hi-immuno{color:#ff5da2;}
+.hi-generic{color:#3ba3ff;}
+.hi-farm{color:#c792ea;}
+
+.source{font-family:var(--font-mono);font-size:.72rem;color:#4d5b78;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;}
+
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.88rem;}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top;}
+th{background:#0e1728;color:var(--capsid);font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;}
+tr:nth-child(even) td{background:#0a0f1c;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media (max-width:900px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+.mini-stat{background:#0e1728;border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+.mini-stat .k{font-family:var(--font-mono);font-size:.7rem;color:#4d5b78;text-transform:uppercase;letter-spacing:1px;}
+.mini-stat .v{font-size:.95rem;color:var(--ink);margin-top:4px;line-height:1.4;}
+
+.timeline{display:flex;flex-direction:column;gap:0;margin-top:10px;}
+.tstep{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+.tstep:last-child{border-bottom:none;}
+.tstep .dot{width:34px;height:34px;border-radius:50%;background:#0e1728;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.8rem;color:var(--ink-dim);transition:background .3s ease,border-color .3s ease,color .3s ease,transform .3s ease;}
+.tstep.active .dot{background:var(--capsid);border-color:var(--capsid);color:#04070d;font-weight:700;transform:scale(1.08);}
+.tstep.active .tt{color:var(--ink);}
+.tstep .tt{font-weight:700;color:var(--ink-dim);margin-bottom:3px;transition:color .3s ease;}
+.tstep .td2{font-size:.85rem;color:#93a3bf;line-height:1.5;max-height:0;opacity:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease .05s;}
+.tstep.active .td2{max-height:160px;opacity:1;}
+.chip.ghost-chip{background:transparent;border:1px solid var(--line);color:var(--ink-dim);}
+.chip.ghost-chip:hover{border-color:var(--capsid);color:var(--ink);}
+
+.quiz-box{background:var(--panel);border:1px solid var(--ok);border-radius:14px;padding:22px 24px;margin-top:6px;}
+.qitem{margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line);}
+.qitem:last-child{border:none;}
+.qopt{display:block;background:#0e1728;border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:6px 0;cursor:pointer;font-size:.88rem;color:#c9d3e6;}
+.qopt:hover{border-color:var(--capsid);}
+.qopt input{margin-right:8px;}
+.qfeedback{margin-top:8px;padding:9px 12px;border-radius:8px;font-size:.85rem;display:none;}
+.qfeedback.ok{background:rgba(51,214,159,.12);border:1px solid var(--ok);color:var(--ok);display:block;}
+.qfeedback.bad{background:rgba(255,93,93,.12);border:1px solid var(--bad);color:var(--bad);display:block;}
+.btn{
+  background:var(--capsid);color:#04070d;border:none;padding:10px 20px;
+  border-radius:8px;font-weight:700;cursor:pointer;font-size:.86rem;
+  font-family:var(--font-body);transition:transform .12s;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink-dim);}
+#quiz-score{font-family:var(--font-mono);color:var(--ink-dim);font-size:.85rem;margin-top:10px;}
+
+.compare-toggle{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--ink-dim);}
+.legend span.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="8" fill="none" stroke="#3ba3ff" stroke-width="1.6"/><circle cx="13" cy="13" r="3.4" fill="#f5b942"/><g stroke="#ff5da2" stroke-width="1.4"><line x1="13" y1="5" x2="13" y2="1.6"/><line x1="21" y1="13" x2="24.4" y2="13"/><line x1="13" y1="21" x2="13" y2="24.4"/><line x1="5" y1="13" x2="1.6" y2="13"/></g></svg>
+      Virión
+    </div>
+    <div class="sub">Atlas de Virología General</div>
+  </div>
+  <div id="navlist"></div>
+</nav>
+
+<main class="main">
+
+<section class="page" id="page-intro">
+  <div class="eyebrow">01 · Fundamentos</div>
+  <h1 class="page-title">Generalidades de los Virus</h1>
+  <p class="page-lead">Un virus no es una célula: es un <span class="tag-hi hi-micro">parásito intracelular obligado</span>, un paquete de instrucciones genéticas que no puede leerse, copiarse ni traducirse a sí mismo. Para existir, necesita secuestrar la maquinaria bioquímica de una célula ajena.</p>
+
+  <div class="card">
+    <h2>¿Qué características definen a un virus?</h2>
+    <div class="grid2">
+      <div>
+        <p><strong>Tamaño submicroscópico:</strong> entre <span class="tag-hi hi-generic">20–300 nm</span>, visibles solo con microscopía electrónica (por debajo del límite de resolución óptico de ~200 nm).</p>
+        <p><strong>Parasitismo intracelular obligado:</strong> carecen de <span class="tag-hi hi-biochem">ribosomas, mitocondrias y sistemas de generación de ATP</span>; no tienen metabolismo propio.</p>
+        <p><strong>Genoma único:</strong> poseen <em>un solo tipo</em> de ácido nucleico (ADN <em>o</em> ARN, nunca ambos), a diferencia de las células.</p>
+      </div>
+      <div>
+        <p><strong>Reproducción por replicación, no por división:</strong> no realizan fisión binaria; se ensamblan a partir de componentes sintetizados por separado.</p>
+        <p><strong>Ausencia de organelos y envoltura nuclear propia:</strong> no son células (acelulares).</p>
+        <p><strong>Especificidad de tropismo:</strong> cada virus reconoce receptores concretos, lo que determina qué <span class="tag-hi hi-generic">órganos y tejidos</span> puede infectar (respiratorio, digestivo, hepático, nervioso, hematopoyético, etc.).</p>
+      </div>
+    </div>
+    <div class="source">Fuente: Murray P.R. et al., <em>Microbiología Médica</em>, cap. "Virología general"; Jawetz, Melnick & Adelberg, <em>Microbiología Médica</em>.</div>
+  </div>
+
+  <div class="card">
+    <h2>Funciones biológicas del virión</h2>
+    <div class="grid3">
+      <div class="mini-stat"><div class="k">Adhesión</div><div class="v">Ligandos de superficie reconocen receptores celulares específicos, definiendo el tropismo.</div></div>
+      <div class="mini-stat"><div class="k">Protección</div><div class="v">La cápside resguarda el genoma de nucleasas, desecación y radiación UV en el ambiente extracelular.</div></div>
+      <div class="mini-stat"><div class="k">Reprogramación</div><div class="v">El genoma redirige la síntesis proteica y energética de la célula hospedadora hacia la producción de progenie viral.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Órganos y sistemas frecuentemente involucrados</h2>
+    <table>
+      <thead><tr><th>Sistema / Órgano</th><th>Ejemplos de virus con tropismo</th><th>Vía de entrada habitual</th></tr></thead>
+      <tbody>
+        <tr><td>Respiratorio (mucosa, epitelio ciliado)</td><td>Influenza, Rinovirus, SARS-CoV-2, VSR</td><td>Inhalación de aerosoles / gotitas</td></tr>
+        <tr><td>Gastrointestinal</td><td>Rotavirus, Norovirus, Virus Hepatitis A</td><td>Fecal-oral</td></tr>
+        <tr><td>Hepático</td><td>Virus Hepatitis B y C</td><td>Parenteral, sexual, perinatal</td></tr>
+        <tr><td>Sistema nervioso central / periférico</td><td>Rabia, Poliovirus, Herpes simple</td><td>Axonal retrógrado, hematógena</td></tr>
+        <tr><td>Linfocitos y médula ósea</td><td>VIH, Epstein-Barr, Parvovirus B19</td><td>Sanguínea, sexual, mucosas</td></tr>
+        <tr><td>Piel y mucosas genitales</td><td>VPH, Herpes simple tipo 2</td><td>Contacto directo</td></tr>
+      </tbody>
+    </table>
+    <div class="source">Fuente: Guyton & Hall (correlato fisiológico de mucosas); Murray, <em>Microbiología Médica</em>, cap. de virus específicos.</div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--envelope);">
+    <h2>⚙️ Mecanismo — 🏥 Ejemplo guía de esta unidad</h2>
+    <p><strong>Mecanismo:</strong> el virión intacto se adhiere a un receptor celular específico mediante proteínas de superficie, penetra, libera su genoma (desnudamiento) y este secuestra la maquinaria de transcripción/traducción del hospedador.</p>
+    <p><strong>Problema:</strong> el secuestro metabólico interrumpe funciones celulares esenciales, produce efecto citopático, activa apoptosis o induce transformación, según el virus.</p>
+    <p><strong>Solución:</strong> el sistema inmune innato (interferones, células NK) contiene la infección en horas; la inmunidad adaptativa (linfocitos T citotóxicos, anticuerpos neutralizantes) la resuelve en días; los antivirales bloquean pasos específicos del ciclo.</p>
+    <p><strong>Enfermedad relacionada:</strong> <span class="tag-hi hi-generic">poliomielitis</span> — el Poliovirus destruye motoneuronas del asta anterior medular, produciendo parálisis flácida asimétrica.</p>
+    <div class="source">Fuente: MedlinePlus – "Poliomielitis"; Murray, <em>Microbiología Médica</em>.</div>
+  </div>
+</section>
+<section class="page" id="page-clasificacion">
+  <div class="eyebrow">02 · Fundamentos</div>
+  <h1 class="page-title">Sistemas de Clasificación Viral</h1>
+  <p class="page-lead">Un mismo virus se clasifica simultáneamente por cuatro criterios independientes: su <strong>taxonomía</strong>, su <strong>morfología</strong>, la <strong>composición química de su genoma</strong> y su <strong>modo de replicación</strong> (síntesis de ARNm). Selecciona un criterio para explorar el modelo 2D correspondiente.</p>
+
+  <div class="card">
+    <div class="chipbar" id="clas-chips">
+      <button class="chip active" data-k="taxonomica">Taxonómica (ICTV)</button>
+      <button class="chip" data-k="morfologica">Morfológica</button>
+      <button class="chip" data-k="quimica">Composición Química</button>
+      <button class="chip" data-k="replicacion">Modo de Replicación</button>
+    </div>
+    <div class="split" style="margin-top:18px;">
+      <div class="stage"><span class="tag" id="clas-stage-tag">Modelo 2D</span><div id="clas-svg"></div></div>
+      <div class="info-panel" id="clas-info"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 02 · CLASIFICACIÓN
+===================================================================== */
+const CLAS = {
+  taxonomica: {
+    tag:'Jerarquía taxonómica (ICTV)',
+    svg:`<svg viewBox="0 0 460 360" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif">
+      ${['Orden  ( -virales )','Familia  ( -viridae )','Subfamilia  ( -virinae )','Género  ( -virus )','Especie'].map((t,i)=>`
+        <g class="zone" data-lvl="${i}">
+          <rect x="60" y="${25+i*62}" width="340" height="46" rx="8" fill="${i%2? '#0e1728':'#111a2e'}" stroke="#3ba3ff" stroke-width="1.4"/>
+          <text x="230" y="${25+i*62+29}" text-anchor="middle" fill="#e7edf7" font-size="15">${t}</text>
+        </g>
+        ${i<4? `<line x1="230" y1="${25+i*62+46}" x2="230" y2="${25+(i+1)*62}" stroke="#4d5b78" stroke-width="2" marker-end="url(#arrow)"/>`:''}
+      `).join('')}
+      <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4d5b78"/></marker></defs>
+      </g></svg>`,
+    info:`<h4>Taxonomía Oficial (ICTV)</h4>
+      <p>El Comité Internacional de Taxonomía de Virus organiza a los virus en una jerarquía descendente: <strong>Orden → Familia → Subfamilia → Género → Especie</strong>, con sufijos estandarizados (-virales, -viridae, -virinae, -virus).</p>
+      <p><strong>Ejemplo:</strong> <em>Herpesvirales → Herpesviridae → Alphaherpesvirinae → Simplexvirus → Herpes simple tipo 1.</em></p>
+      <p>Este criterio es independiente de la clínica: agrupa virus por parentesco evolutivo/genómico, no por el órgano que afectan.</p>
+      <div class="source">Fuente: ICTV (International Committee on Taxonomy of Viruses), Master Species List; Murray, <em>Microbiología Médica</em>.</div>`
+  },
+  morfologica: {
+    tag:'Simetría y forma de la cápside',
+    svg:`<svg viewBox="0 0 460 380" xmlns="http://www.w3.org/2000/svg">
+      <!-- ICOSAÉDRICA -->
+      <g class="zone" data-m="icosaedrica">
+        <polygon points="85,45 118,60 118,95 85,112 52,95 52,60" fill="#0e1728" stroke="#3ba3ff" stroke-width="2.6"/>
+        <g stroke="#3ba3ff" stroke-width="1.1" opacity=".65">
+          <line x1="85" y1="45" x2="85" y2="112"/><line x1="52" y1="60" x2="118" y2="95"/><line x1="118" y1="60" x2="52" y2="95"/>
+        </g>
+        ${[[85,45],[118,60],[118,95],[85,112],[52,95],[52,60]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#3ba3ff"/>`).join('')}
+        <text x="85" y="150" text-anchor="middle" class="zone-label">Icosaédrica</text>
+      </g>
+
+      <!-- HELICOIDAL -->
+      <g class="zone" data-m="helicoidal">
+        <path d="M195,42 q26,17 0,34 q-26,17 0,34 q26,17 0,34 q-26,17 0,34" fill="none" stroke="#f5b942" stroke-width="15" stroke-linecap="round" opacity="0.25"/>
+        <path d="M195,42 q26,17 0,34 q-26,17 0,34 q26,17 0,34 q-26,17 0,34" fill="none" stroke="#f5b942" stroke-width="3" stroke-linecap="round"/>
+        ${Array.from({length:9}).map((_,i)=>`<line x1="${183-((i%2)?8:0)}" y1="${50+i*17}" x2="${207+((i%2)?8:0)}" y2="${50+i*17}" stroke="#f5b942" stroke-width="1.6" opacity="0.55"/>`).join('')}
+        <text x="195" y="150" text-anchor="middle" class="zone-label">Helicoidal</text>
+      </g>
+
+      <!-- COMPLEJA (bacteriófago) -->
+      <g class="zone" data-m="compleja">
+        <polygon points="345,35 366,46 366,68 345,79 324,68 324,46" fill="#0e1728" stroke="#ff5da2" stroke-width="2.4"/>
+        <line x1="345" y1="60" x2="345" y2="66" stroke="#ff5da2" stroke-width="1"/>
+        <path d="M338,50 q7,6 14,0 q-3,8 -7,8 q-4,0 -7,-8" fill="none" stroke="#ff5da2" stroke-width="1" opacity=".6"/>
+        <rect x="341" y="79" width="8" height="42" fill="none" stroke="#ff5da2" stroke-width="2.2"/>
+        ${[86,93,100,107,114].map(y=>`<line x1="341" y1="${y}" x2="349" y2="${y}" stroke="#ff5da2" stroke-width="1.4"/>`).join('')}
+        <polygon points="330,121 360,121 366,131 324,131" fill="none" stroke="#ff5da2" stroke-width="2"/>
+        <path d="M330,131 q-14,10 -22,26 M345,131 v20 M360,131 q14,10 22,26" fill="none" stroke="#ff5da2" stroke-width="1.6"/>
+        <text x="345" y="168" text-anchor="middle" class="zone-label">Compleja (bacteriófago)</text>
+      </g>
+
+      <!-- ENVUELTA -->
+      <g class="zone" data-m="envuelta">
+        <circle cx="115" cy="270" r="46" fill="#0e1728" stroke="#7c5cff" stroke-width="3"/>
+        <polygon points="115,246 132,255 132,272 115,281 98,272 98,255" fill="none" stroke="#3ba3ff" stroke-width="2"/>
+        ${[0,1,2,3,4,5,6,7,8,9,10].map(i=>{const a=i*2*Math.PI/11;const x1=115+46*Math.cos(a),y1=270+46*Math.sin(a),x2=115+60*Math.cos(a),y2=270+60*Math.sin(a);return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#7c5cff" stroke-width="3" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="3.5" fill="#7c5cff"/>`}).join('')}
+        <text x="115" y="345" text-anchor="middle" class="zone-label">Envuelta (con peplómeros)</text>
+      </g>
+
+      <!-- DESNUDA -->
+      <g class="zone" data-m="desnuda">
+        <polygon points="330,238 366,250 378,286 354,316 306,316 282,286 294,250" fill="#0e1728" stroke="#33d69f" stroke-width="3"/>
+        <g stroke="#33d69f" stroke-width="1" opacity=".55">
+          <line x1="330" y1="238" x2="330" y2="316"/><line x1="282" y1="286" x2="378" y2="286"/>
+          <line x1="294" y1="250" x2="366" y2="250"/><line x1="354" y1="316" x2="306" y2="238"/>
+        </g>
+        <text x="330" y="345" text-anchor="middle" class="zone-label">Desnuda (sin envoltura)</text>
+      </g>
+      </svg>`,
+    info:`<h4 id="morf-title">Selecciona una forma</h4><p class="placeholder" id="morf-text">Haz clic en cada silueta del diagrama para ver su definición, ejemplos clínicos y su relación con la resistencia ambiental.</p>`
+  },
+  quimica: {
+    tag:'Naturaleza del ácido nucleico',
+    svg:`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg">
+      <g class="zone" data-q="dsdna"><rect x="20" y="20" width="200" height="50" rx="8" fill="#0e1728" stroke="#f5b942" stroke-width="1.6"/><text x="120" y="50" text-anchor="middle" fill="#e7edf7" font-size="14">ADN bicatenario (dsDNA)</text></g>
+      <g class="zone" data-q="ssdna"><rect x="240" y="20" width="200" height="50" rx="8" fill="#0e1728" stroke="#f5b942" stroke-width="1.6"/><text x="340" y="50" text-anchor="middle" fill="#e7edf7" font-size="14">ADN monocatenario (ssDNA)</text></g>
+      <g class="zone" data-q="dsrna"><rect x="20" y="90" width="200" height="50" rx="8" fill="#0e1728" stroke="#3ba3ff" stroke-width="1.6"/><text x="120" y="120" text-anchor="middle" fill="#e7edf7" font-size="14">ARN bicatenario (dsRNA)</text></g>
+      <g class="zone" data-q="ssrnapos"><rect x="240" y="90" width="200" height="50" rx="8" fill="#0e1728" stroke="#3ba3ff" stroke-width="1.6"/><text x="340" y="113" text-anchor="middle" fill="#e7edf7" font-size="13">ARN monocatenario (+)</text><text x="340" y="130" text-anchor="middle" fill="#93a3bf" font-size="11">sentido positivo</text></g>
+      <g class="zone" data-q="ssrnaneg"><rect x="20" y="160" width="200" height="50" rx="8" fill="#0e1728" stroke="#3ba3ff" stroke-width="1.6"/><text x="120" y="183" text-anchor="middle" fill="#e7edf7" font-size="13">ARN monocatenario (–)</text><text x="120" y="200" text-anchor="middle" fill="#93a3bf" font-size="11">sentido negativo</text></g>
+      <g class="zone" data-q="segmentado"><rect x="240" y="160" width="200" height="50" rx="8" fill="#0e1728" stroke="#33d69f" stroke-width="1.6"/><text x="340" y="190" text-anchor="middle" fill="#e7edf7" font-size="14">Genoma segmentado</text></g>
+      <g class="zone" data-q="circular"><rect x="20" y="230" width="200" height="50" rx="8" fill="#0e1728" stroke="#ff5da2" stroke-width="1.6"/><text x="120" y="260" text-anchor="middle" fill="#e7edf7" font-size="14">Circular vs. lineal</text></g>
+      <g class="zone" data-q="tr"><rect x="240" y="230" width="200" height="50" rx="8" fill="#0e1728" stroke="#ff5da2" stroke-width="1.6"/><text x="340" y="260" text-anchor="middle" fill="#e7edf7" font-size="14">Con transcriptasa reversa</text></g>
+      </svg>`,
+    info:`<h4 id="quim-title">Selecciona un tipo de genoma</h4><p class="placeholder" id="quim-text">El tipo de ácido nucleico determina la enzima de síntesis, la localización de la replicación y la mutabilidad del virus.</p>`
+  },
+  replicacion: {
+    tag:'Clasificación de Baltimore (síntesis de ARNm)',
+    svg:`<svg viewBox="0 0 460 400" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="sans-serif">
+      <rect x="150" y="10" width="160" height="40" rx="8" fill="#132340" stroke="#3ba3ff" stroke-width="1.6"/>
+      <text x="230" y="35" text-anchor="middle" fill="#e7edf7" font-size="13">ARNm (+)</text>
+      ${['I · dsDNA','II · ssDNA','III · dsRNA','IV · ssRNA (+)','V · ssRNA (–)','VI · ssRNA-RT (retro)','VII · dsDNA-RT (hepadna)'].map((t,i)=>{
+        const y=70+i*44; return `
+        <g class="zone" data-g="${i}">
+          <rect x="20" y="${y}" width="200" height="34" rx="7" fill="#0e1728" stroke="#f5b942" stroke-width="1.4"/>
+          <text x="120" y="${y+22}" text-anchor="middle" fill="#e7edf7" font-size="12.5">${t}</text>
+        </g>
+        <line x1="220" y1="${y+17}" x2="228" y2="30" stroke="#4d5b78" stroke-width="1.4"/>
+        `;
+      }).join('')}
+      </g></svg>`,
+    info:`<h4 id="rep-title">Selecciona un grupo de Baltimore</h4><p class="placeholder" id="rep-text">Todos los grupos convergen en un punto: producir ARNm funcional para los ribosomas del hospedador. La ruta hasta ese ARNm difiere en el número de pasos enzimáticos.</p>`
+  }
+};
+
+const MORF_DATA = {
+  icosaedrica:{t:'Cápside Icosaédrica',h:`<p><strong>Definición:</strong> geometría poliédrica de 20 caras triangulares equiláteras, la forma que ocupa el <span class="hi-biochem">mínimo de energía libre</span> para encerrar un volumen con subunidades idénticas (capsómeros).</p><p><strong>Ejemplos:</strong> Adenovirus, Poliovirus, Herpesvirus (icosaédrica + envoltura).</p><div class="source">Fuente: Murray, <em>Microbiología Médica</em>, cap. Estructura viral.</div>`},
+  helicoidal:{t:'Cápside Helicoidal',h:`<p><strong>Definición:</strong> capsómeros dispuestos en espiral alrededor del ácido nucleico, formando un cilindro hueco flexible o rígido.</p><p><strong>Ejemplos:</strong> Virus de la Rabia, Influenza (helicoidal + envoltura), Sarampión.</p><div class="source">Fuente: Jawetz, <em>Microbiología Médica</em>.</div>`},
+  compleja:{t:'Simetría Compleja',h:`<p><strong>Definición:</strong> no se ajusta a simetría helicoidal ni icosaédrica pura; combina cabeza, cola contráctil y fibras (bacteriófagos) o múltiples capas (Poxvirus).</p><p><strong>Ejemplos:</strong> Bacteriófago T4, Virus Vaccinia (Poxviridae).</p><div class="source">Fuente: Murray, <em>Microbiología Médica</em>.</div>`},
+  envuelta:{t:'Virus Envueltos',h:`<p><strong>Definición:</strong> poseen una bicapa lipídica derivada de la membrana del hospedador con glicoproteínas insertadas (peplómeros).</p><p><strong>Consecuencia biológica:</strong> son <span class="hi-micro">lábiles</span> — sensibles a desecación, detergentes, solventes y calor; se transmiten mal por fómites y requieren contacto húmedo directo.</p><p><strong>Ejemplos:</strong> VIH, Influenza, Herpesvirus, Coronavirus.</p><div class="source">Fuente: MedlinePlus; Murray, <em>Microbiología Médica</em>.</div>`},
+  desnuda:{t:'Virus Desnudos (sin envoltura)',h:`<p><strong>Definición:</strong> la cápside proteica queda expuesta directamente al ambiente, sin bicapa lipídica.</p><p><strong>Consecuencia biológica:</strong> son <span class="hi-micro">resistentes</span> a desecación, ácido gástrico, detergentes y superficies (fómites); explican brotes por agua/alimentos contaminados.</p><p><strong>Ejemplos:</strong> Poliovirus, Rotavirus, Adenovirus, Norovirus.</p><div class="source">Fuente: MedlinePlus; Jawetz, <em>Microbiología Médica</em>.</div>`}
+};
+
+const QUIM_DATA = {
+  dsdna:{t:'ADN bicatenario (dsDNA)',h:`<p>Genoma estable, baja tasa de mutación (existe corrección de pruebas). Replicación generalmente <span class="hi-generic">nuclear</span>.</p><p><strong>Ejemplos:</strong> Herpesviridae, Adenoviridae, Poxviridae (excepción: replica en citoplasma).</p>`},
+  ssdna:{t:'ADN monocatenario (ssDNA)',h:`<p>Requiere conversión a forma bicatenaria antes de transcribirse. Genomas muy pequeños.</p><p><strong>Ejemplo:</strong> Parvovirus B19 (eritema infeccioso, crisis aplásica).</p>`},
+  dsrna:{t:'ARN bicatenario (dsRNA)',h:`<p>Requiere una ARN-polimerasa-ARN dependiente <em>propia</em> empaquetada en el virión, porque la célula no tiene enzimas para leer ARN bicatenario.</p><p><strong>Ejemplo:</strong> Rotavirus (diarrea infantil grave).</p>`},
+  ssrnapos:{t:'ARN monocatenario sentido positivo (+)',h:`<p>Funciona directamente como ARNm: es <span class="hi-biochem">infeccioso por sí solo</span> si se inyecta en la célula. Se traduce de inmediato por los ribosomas del hospedador.</p><p><strong>Ejemplos:</strong> Coronavirus, Poliovirus, Virus Hepatitis C.</p>`},
+  ssrnaneg:{t:'ARN monocatenario sentido negativo (–)',h:`<p>Es complementario al ARNm; <strong>no</strong> es infeccioso por sí solo. Requiere que el virión traiga empaquetada una ARN-polimerasa-ARN dependiente para transcribir primero el ARNm.</p><p><strong>Ejemplos:</strong> Influenza, Rabia, Sarampión, Ébola.</p>`},
+  segmentado:{t:'Genoma Segmentado',h:`<p>El material genético se divide en fragmentos independientes, cada uno codificando distintas proteínas. Permite <span class="hi-immuno">reordenamiento genético (reassortment)</span> cuando dos cepas coinfectan una célula.</p><p><strong>Ejemplo clínico clave:</strong> Influenza A — el reordenamiento entre cepas aviares/porcinas/humanas genera pandemias (shift antigénico).</p>`},
+  circular:{t:'Genomas Circulares vs. Lineales',h:`<p>Los genomas circulares (p. ej. Papovaviridae) favorecen la formación de episomas estables; los lineales requieren mecanismos especiales para replicar sus extremos.</p>`},
+  tr:{t:'Virus con Transcriptasa Reversa',h:`<p>Utilizan la enzima <span class="hi-biochem">transcriptasa reversa</span> para sintetizar ADN a partir de un molde de ARN (Retrovirus) o para completar su genoma de ADN (Hepadnavirus), invirtiendo el dogma central.</p><p><strong>Ejemplos:</strong> VIH (Retroviridae), Virus Hepatitis B (Hepadnaviridae).</p>`}
+};
+
+const REP_DATA = [
+ {t:'Grupo I · dsDNA',h:`<p>El ARNm se transcribe directamente desde el ADN bicatenario mediante la ARN-polimerasa II del hospedador (nuclear).</p><p><strong>Ejemplo:</strong> Herpesviridae.</p>`},
+ {t:'Grupo II · ssDNA',h:`<p>Primero se sintetiza la cadena complementaria para formar dsDNA intermediario, luego se transcribe ARNm.</p><p><strong>Ejemplo:</strong> Parvovirus.</p>`},
+ {t:'Grupo III · dsRNA',h:`<p>Una ARN-polimerasa-ARN dependiente viral (empaquetada en el virión) transcribe ARNm a partir de una de las hebras.</p><p><strong>Ejemplo:</strong> Rotavirus.</p>`},
+ {t:'Grupo IV · ssRNA (+)',h:`<p>El genoma actúa directamente como ARNm y se traduce de inmediato; luego una replicasa viral (codificada por el propio genoma) sintetiza un molde negativo para replicarse.</p><p><strong>Ejemplo:</strong> Coronavirus, Poliovirus.</p>`},
+ {t:'Grupo V · ssRNA (–)',h:`<p>Requiere una ARN-polimerasa-ARN dependiente empaquetada en el virión para transcribir primero ARNm complementario antes de poder traducirse.</p><p><strong>Ejemplo:</strong> Influenza, Rabia.</p>`},
+ {t:'Grupo VI · ssRNA retrovirus',h:`<p>La transcriptasa reversa copia el ARN a ADN, que se integra al genoma del hospedador (provirus) antes de transcribirse a ARNm.</p><p><strong>Ejemplo:</strong> VIH.</p>`},
+ {t:'Grupo VII · dsDNA-RT (hepadnavirus)',h:`<p>El ADN parcialmente bicatenario se completa y transcribe a un ARN pregenómico, que luego se retrotranscribe a nuevo ADN.</p><p><strong>Ejemplo:</strong> Virus Hepatitis B.</p>`}
+];
+
+function renderClas(k){
+  const d = CLAS[k];
+  document.getElementById('clas-svg').innerHTML = d.svg;
+  document.getElementById('clas-stage-tag').textContent = d.tag;
+  document.getElementById('clas-info').innerHTML = d.info;
+
+  document.querySelectorAll('#clas-svg .zone').forEach(z=>{
+    z.addEventListener('click', ()=>{
+      if(z.dataset.m){ const m=MORF_DATA[z.dataset.m]; document.getElementById('morf-title').textContent=m.t; document.getElementById('morf-text').outerHTML=`<div id="morf-text">${m.h}</div>`; }
+      if(z.dataset.q){ const q=QUIM_DATA[z.dataset.q]; document.getElementById('quim-title').textContent=q.t; document.getElementById('quim-text').outerHTML=`<div id="quim-text">${q.h}</div>`; }
+      if(z.dataset.g!==undefined){ const r=REP_DATA[+z.dataset.g]; document.getElementById('rep-title').textContent=r.t; document.getElementById('rep-text').outerHTML=`<div id="rep-text">${r.h}</div>`; }
+      if(z.dataset.lvl!==undefined){
+        const lv=['Orden agrupa familias con parentesco evolutivo profundo (sufijo -virales).','Familia comparte estrategia genómica y morfología general (sufijo -viridae).','Subfamilia distingue linajes dentro de una familia (sufijo -virinae).','Género agrupa especies con propiedades biológicas muy similares (sufijo -virus).','Especie es la unidad taxonómica básica, definida por linaje genético y nicho ecológico/clínico.'][+z.dataset.lvl];
+        document.getElementById('clas-info').innerHTML = `<h4>Nivel taxonómico</h4><p>${lv}</p><div class="source">Fuente: ICTV Master Species List (ictv.global).</div>`;
+      }
+    });
+  });
+}
+document.querySelectorAll('#clas-chips .chip').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    document.querySelectorAll('#clas-chips .chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    renderClas(c.dataset.k);
+  });
+});
+renderClas('taxonomica');
+</script>
+<section class="page" id="page-estructura">
+  <div class="eyebrow">03 · Fundamentos</div>
+  <h1 class="page-title">Estructura del Virión y sus Compartimientos</h1>
+  <p class="page-lead">El virión completo se organiza en capas concéntricas. Haz clic sobre cada compartimiento rotulado del corte transversal 2D (izquierda) para desplegar su composición, función y ejemplos clínicos (derecha).</p>
+
+  <div class="card">
+    <div class="split">
+      <div class="stage"><span class="tag">Corte transversal 2D del virión — rotulado</span>
+        <svg viewBox="0 0 460 440" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glowFx" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <radialGradient id="capsidFill" cx="50%" cy="45%" r="60%">
+              <stop offset="0%" stop-color="#12233f"/>
+              <stop offset="100%" stop-color="#0b1120"/>
+            </radialGradient>
+          </defs>
+
+          <!-- ===== ENVOLTURA ===== -->
+          <g class="zone est-zone" id="z-envoltura" data-k="envoltura">
+            <circle cx="230" cy="200" r="182" fill="none" stroke="#ff5da2" stroke-width="3"/>
+            ${Array.from({length:18}).map((_,i)=>{const a=i*Math.PI/9;const x1=230+182*Math.cos(a),y1=200+182*Math.sin(a),x2=230+204*Math.cos(a),y2=200+204*Math.sin(a);return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ff5da2" stroke-width="4" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="5.5" fill="#ff5da2"/>`}).join('')}
+          </g>
+
+          <!-- ===== MATRIZ ===== -->
+          <g class="zone est-zone" id="z-matriz" data-k="matriz">
+            <circle cx="230" cy="200" r="152" fill="none" stroke="#7c5cff" stroke-width="17" stroke-dasharray="3 7" stroke-linecap="round" opacity="0.9"/>
+          </g>
+
+          <!-- ===== CAPSIDE (icosaédrica estilizada con facetas) ===== -->
+          <g class="zone est-zone" id="z-capside" data-k="capside">
+            <polygon points="230,78 285,102 315,150 315,205 285,255 230,280 175,255 145,205 145,150 175,102"
+              fill="url(#capsidFill)" stroke="#3ba3ff" stroke-width="4.5"/>
+            <g stroke="#3ba3ff" stroke-width="1.3" opacity="0.55">
+              <line x1="230" y1="78" x2="230" y2="280"/>
+              <line x1="145" y1="150" x2="315" y2="150"/>
+              <line x1="145" y1="205" x2="315" y2="205"/>
+              <line x1="175" y1="102" x2="285" y2="255"/>
+              <line x1="285" y1="102" x2="175" y2="255"/>
+            </g>
+          </g>
+
+          <!-- ===== CORE ===== -->
+          <g class="zone est-zone" id="z-core" data-k="core">
+            <circle cx="230" cy="200" r="82" fill="#0c1220" stroke="#33d69f" stroke-width="4.5"/>
+          </g>
+
+          <!-- ===== GENOMA ===== -->
+          <g class="zone est-zone" id="z-genoma" data-k="genoma">
+            <path d="M185,195 q12,-38 42,-20 q30,18 44,-14 q10,26 -14,44 q-30,22 -58,4 q-22,-12 -14,-14" fill="none" stroke="#f5b942" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+
+          <!-- ===== CALLOUTS / RÓTULOS ===== -->
+          <g font-family="sans-serif" font-size="13" fill="#e7edf7">
+            <line x1="230" y1="18" x2="230" y2="78" stroke="#ff5da2" stroke-width="1.4"/>
+            <text x="230" y="14" text-anchor="middle">① Envoltura + espículas</text>
+
+            <line x1="382" y1="130" x2="332" y2="163" stroke="#7c5cff" stroke-width="1.4"/>
+            <text x="386" y="132" text-anchor="start">② Matriz</text>
+
+            <line x1="382" y1="230" x2="303" y2="212" stroke="#3ba3ff" stroke-width="1.4"/>
+            <text x="386" y="234" text-anchor="start">③ Cápside</text>
+
+            <line x1="60" y1="230" x2="153" y2="215" stroke="#33d69f" stroke-width="1.4"/>
+            <text x="56" y="234" text-anchor="end">④ Core</text>
+
+            <line x1="60" y1="160" x2="192" y2="185" stroke="#f5b942" stroke-width="1.4"/>
+            <text x="56" y="156" text-anchor="end">⑤ Genoma</text>
+          </g>
+
+          <text x="230" y="425" text-anchor="middle" fill="#4d5b78" font-size="11" font-family="sans-serif">Modelo esquemático · corte transversal · no a escala</text>
+        </svg>
+      </div>
+      <div class="info-panel" id="est-info">
+        <h4>Selecciona un compartimiento</h4>
+        <p class="placeholder">Envoltura, matriz, cápside, core y genoma — cada capa cumple una función mecánica o informativa distinta dentro del virión. También puedes usar los botones numerados de abajo.</p>
+      </div>
+    </div>
+    <div class="chipbar" style="margin-top:16px;" id="est-chips">
+      <button class="chip a-envelope" data-k="envoltura">① Envoltura</button>
+      <button class="chip a-matrix" data-k="matriz">② Matriz</button>
+      <button class="chip" data-k="capside">③ Cápside</button>
+      <button class="chip a-core" data-k="core">④ Core</button>
+      <button class="chip" data-k="genoma">⑤ Genoma</button>
+    </div>
+    <div class="legend">
+      <span><span class="sw" style="background:#ff5da2;"></span>Envoltura</span>
+      <span><span class="sw" style="background:#7c5cff;"></span>Matriz</span>
+      <span><span class="sw" style="background:#3ba3ff;"></span>Cápside</span>
+      <span><span class="sw" style="background:#33d69f;"></span>Core</span>
+      <span><span class="sw" style="background:#f5b942;"></span>Genoma</span>
+    </div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 03 · ESTRUCTURA VIRAL
+===================================================================== */
+const EST_DATA = {
+  envoltura:{
+    h:`<h4>① Envoltura Lipídica</h4>
+    <p><strong>Composición:</strong> bicapa lipídica derivada de membranas del hospedador (plasmática, nuclear o del aparato de Golgi) adquirida durante la <em>gemación</em>. Incluye glicoproteínas virales insertadas que forman espículas (peplómeros).</p>
+    <p><strong>Función:</strong> las glicoproteínas actúan como <span class="hi-generic">Proteínas de Adhesión Viral (PAV)</span>, reconociendo receptores celulares específicos y determinando el <em>tropismo tisular y de especie</em>; también son el principal blanco de anticuerpos neutralizantes.</p>
+    <p><strong>Órganos/ejemplos:</strong> hemaglutinina de Influenza (mucosa respiratoria), gp120 del VIH (linfocitos T CD4).</p>
+    <div class="source">Fuente: Murray, <em>Microbiología Médica</em>, cap. Estructura viral.</div>`
+  },
+  matriz:{
+    h:`<h4>② Proteína de Matriz</h4>
+    <p><strong>Composición:</strong> capa proteica situada entre la envoltura y la nucleocápside/cápside, presente en la mayoría de los virus envueltos.</p>
+    <p><strong>Función:</strong> da rigidez estructural al virión, conecta la envoltura con el core interno y organiza el ensamblaje/gemación de nuevas partículas en la membrana celular.</p>
+    <p><strong>Ejemplos:</strong> proteína M1 de Influenza; proteína p17 del VIH.</p>
+    <div class="source">Fuente: Jawetz, <em>Microbiología Médica</em>, cap. Virus generales.</div>`
+  },
+  capside:{
+    h:`<h4>③ Cápside Proteica (Capsómeros)</h4>
+    <p><strong>Composición:</strong> subunidades proteicas (capsómeros) organizadas simétricamente (helicoidal, icosaédrica o compleja).</p>
+    <p><strong>Función:</strong> protege el ácido nucleico frente a desecación, radiación UV y nucleasas ambientales/gastrointestinales. En virus desnudos, además porta las PAV.</p>
+    <p><strong>Ejemplos:</strong> cápside icosaédrica de Poliovirus (resiste el pH ácido gástrico).</p>
+    <div class="source">Fuente: Murray, <em>Microbiología Médica</em>.</div>`
+  },
+  core:{
+    h:`<h4>④ Core (Nucleocápside interna)</h4>
+    <p><strong>Composición:</strong> complejo de proteínas internas (nucleoproteínas) asociadas íntimamente al ácido nucleico, y en algunos virus, enzimas empaquetadas (p. ej. transcriptasa reversa, ARN-polimerasa viral).</p>
+    <p><strong>Función:</strong> condensa y estabiliza el genoma para su empaquetamiento; entrega las enzimas necesarias para iniciar la síntesis de ARNm apenas ingresa a la célula.</p>
+    <p><strong>Ejemplos:</strong> core cónico del VIH (cápside + transcriptasa reversa + integrasa).</p>
+    <div class="source">Fuente: Murray, <em>Microbiología Médica</em>.</div>`
+  },
+  genoma:{
+    h:`<h4>⑤ Genoma (Ácido Nucleico)</h4>
+    <p><strong>Composición:</strong> ADN o ARN, mono o bicatenario, lineal o circular, único o segmentado (nunca ambos tipos de ácido nucleico a la vez).</p>
+    <p><strong>Función:</strong> codifica proteínas tempranas (enzimas replicativas) y tardías (proteínas estructurales); reprograma por completo la maquinaria metabólica de la célula hospedadora.</p>
+    <p><strong>Correlato bioquímico:</strong> el tipo de ácido nucleico determina qué enzima debe traer el virión (ver sección de Clasificación → Modo de Replicación).</p>
+    <div class="source">Fuente: Murray, <em>Microbiología Médica</em>; Lehninger, <em>Bioquímica</em> (dogma central).</div>`
+  }
+};
+function showEst(k){
+  document.getElementById('est-info').innerHTML = EST_DATA[k].h;
+  document.querySelectorAll('#page-estructura .chip').forEach(c=>c.classList.toggle('active', c.dataset.k===k));
+  document.querySelectorAll('#page-estructura .est-zone').forEach(z=>z.classList.toggle('active-zone', z.dataset.k===k));
+}
+document.querySelectorAll('#page-estructura .est-zone').forEach(z=>{
+  z.addEventListener('click', ()=>showEst(z.dataset.k));
+});
+document.querySelectorAll('#est-chips .chip').forEach(c=>{
+  c.addEventListener('click', ()=>showEst(c.dataset.k));
+});
+showEst('envoltura');
+</script>
+<section class="page" id="page-ciclo">
+  <div class="eyebrow">04 · Replicación</div>
+  <h1 class="page-title">Ciclo Viral Interactivo</h1>
+  <p class="page-lead">Haz clic en cada etapa (o reproduce la secuencia completa) para animar el proceso sobre la célula hospedadora, con una transición de disolución suave entre pasos.</p>
+
+  <div class="card">
+    <div class="split">
+      <div class="stage" style="min-height:420px;"><span class="tag">Simulación celular 2D</span>
+        <canvas id="cycleCanvas" width="480" height="400" style="max-width:100%;"></canvas>
+      </div>
+      <div class="info-panel">
+        <div class="chipbar" style="margin-bottom:4px;">
+          <button class="chip" id="cycle-play">▶ Reproducir secuencia</button>
+          <button class="chip ghost-chip" id="cycle-reset">⟲ Reiniciar</button>
+        </div>
+        <div class="timeline" id="cycle-timeline"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 04 · CICLO VIRAL (canvas, transición crossfade)
+===================================================================== */
+const CYCLE_STEPS = [
+ {t:'1 · Adsorción',d:'El virión extracelular se une mediante sus ligandos de superficie a receptores específicos de la membrana plasmática. Interacción altamente específica, bloqueable por anticuerpos neutralizantes.'},
+ {t:'2 · Penetración',d:'El virus atraviesa la membrana celular: los envueltos por fusión de membranas; los desnudos por endocitosis mediada por receptor (viropexia).'},
+ {t:'3 · Desnudamiento',d:'Enzimas celulares (lisosomales o citoplasmáticas) degradan la cápside, liberando el ácido nucleico viral infectivo en el citoplasma o núcleo.'},
+ {t:'4 · Biosíntesis / Replicación',d:'El ácido nucleico toma el mando: transcripción de ARNm viral, traducción de proteínas tempranas y tardías, y replicación del genoma.'},
+ {t:'5 · Ensamblaje y Liberación',d:'Los capsómeros se autoensamblan alrededor de las copias del genoma. Los viriones maduros salen por gemación (envueltos) o por lisis celular (desnudos).'}
+];
+const tl = document.getElementById('cycle-timeline');
+CYCLE_STEPS.forEach((s,i)=>{
+  const div = document.createElement('div');
+  div.className='tstep'+(i===0?' active':'');
+  div.id='tstep-'+i;
+  div.innerHTML = `<div class="dot">${i+1}</div><div><div class="tt">${s.t}</div><div class="td2">${s.d}</div></div>`;
+  div.onclick = ()=>{ stopAutoplay(); animateToStep(i); };
+  tl.appendChild(div);
+});
+
+const cycleCanvas = document.getElementById('cycleCanvas');
+const cCtx = cycleCanvas.getContext('2d');
+const CELL = {cx:300, cy:200, rMembrane:175, nx:330, ny:200, rNucleus:58};
+
+function drawCellBase(){
+  cCtx.clearRect(0,0,cycleCanvas.width,cycleCanvas.height);
+  // citoplasma con gradiente
+  const grad = cCtx.createRadialGradient(CELL.cx,CELL.cy,20,CELL.cx,CELL.cy,CELL.rMembrane);
+  grad.addColorStop(0,'#10192c'); grad.addColorStop(1,'#0a0f1c');
+  cCtx.beginPath(); cCtx.arc(CELL.cx,CELL.cy,CELL.rMembrane,0,2*Math.PI);
+  cCtx.fillStyle=grad; cCtx.fill();
+  cCtx.lineWidth=4; cCtx.strokeStyle='#1e2b45'; cCtx.stroke();
+  cCtx.save(); cCtx.setLineDash([1,4]); cCtx.lineWidth=2; cCtx.strokeStyle='#334155';
+  cCtx.beginPath(); cCtx.arc(CELL.cx,CELL.cy,CELL.rMembrane-6,0,2*Math.PI); cCtx.stroke();
+  cCtx.restore();
+  // ribosomas / textura citoplasmática
+  cCtx.fillStyle='#1b2740';
+  for(let i=0;i<26;i++){
+    const a = (i*137.5)%360*Math.PI/180, rr = 40+((i*53)%125);
+    const x = CELL.cx-40+rr*Math.cos(a)*0.85, y = CELL.cy+rr*Math.sin(a)*0.85;
+    if(Math.hypot(x-CELL.nx,y-CELL.ny) > CELL.rNucleus+10){ cCtx.beginPath(); cCtx.arc(x,y,2.1,0,2*Math.PI); cCtx.fill(); }
+  }
+  // núcleo
+  cCtx.beginPath(); cCtx.arc(CELL.nx,CELL.ny,CELL.rNucleus,0,2*Math.PI);
+  cCtx.fillStyle='#141e36'; cCtx.fill(); cCtx.strokeStyle='#3ba3ff'; cCtx.lineWidth=2.4; cCtx.stroke();
+  cCtx.beginPath(); cCtx.arc(CELL.nx+14,CELL.ny-10,10,0,2*Math.PI); cCtx.fillStyle='#1c2c4d'; cCtx.fill(); cCtx.strokeStyle='#60a5fa'; cCtx.lineWidth=1.4; cCtx.stroke();
+  cCtx.fillStyle='#93a3bf'; cCtx.font='12px sans-serif'; cCtx.textAlign='center';
+  cCtx.fillText('Núcleo', CELL.nx, CELL.ny+CELL.rNucleus+18);
+  cCtx.fillText('Citoplasma', 175, 55);
+  cCtx.fillText('Membrana plasmática', CELL.cx, CELL.cy+CELL.rMembrane+22);
+}
+
+function drawVirion(x,y,r,alpha,withGenome){
+  cCtx.save(); cCtx.globalAlpha *= alpha;
+  cCtx.beginPath(); cCtx.arc(x,y,r,0,2*Math.PI);
+  cCtx.fillStyle='#ff5da2'; cCtx.fill(); cCtx.strokeStyle='#fff'; cCtx.lineWidth=1.4; cCtx.stroke();
+  for(let k=0;k<8;k++){const a=k*Math.PI/4; cCtx.beginPath();cCtx.moveTo(x+r*Math.cos(a),y+r*Math.sin(a));cCtx.lineTo(x+(r+9)*Math.cos(a),y+(r+9)*Math.sin(a));cCtx.strokeStyle='#ff5da2';cCtx.lineWidth=2.6;cCtx.stroke();}
+  if(withGenome){ cCtx.beginPath(); cCtx.arc(x,y,r*0.45,0,2*Math.PI); cCtx.strokeStyle='#f5b942'; cCtx.lineWidth=2; cCtx.stroke(); }
+  cCtx.restore();
+}
+
+/* ---- dibujantes por etapa: cada uno acepta un alpha de mezcla (crossfade) ---- */
+const STEP_DRAWERS = [
+  // 0. Adsorción
+  (a)=>{
+    cCtx.save(); cCtx.globalAlpha=a;
+    drawVirion(95,110,19,1,true);
+    cCtx.beginPath(); cCtx.moveTo(95,129); cCtx.lineTo(140,168); cCtx.strokeStyle='#33d69f'; cCtx.lineWidth=2; cCtx.setLineDash([4,3]); cCtx.stroke(); cCtx.setLineDash([]);
+    cCtx.fillStyle='#33d69f'; cCtx.font='11px sans-serif'; cCtx.textAlign='left'; cCtx.fillText('unión ligando–receptor', 145, 165);
+    cCtx.restore();
+  },
+  // 1. Penetración
+  (a)=>{
+    cCtx.save(); cCtx.globalAlpha=a;
+    drawVirion(150,165,18,1,true);
+    cCtx.beginPath(); cCtx.arc(150,168,28,Math.PI*1.05,Math.PI*1.95); cCtx.strokeStyle='#3ba3ff'; cCtx.lineWidth=3; cCtx.stroke();
+    cCtx.fillStyle='#3ba3ff'; cCtx.font='11px sans-serif'; cCtx.textAlign='left'; cCtx.fillText('invaginación de membrana', 185, 150);
+    cCtx.restore();
+  },
+  // 2. Desnudamiento
+  (a)=>{
+    cCtx.save(); cCtx.globalAlpha=a;
+    cCtx.beginPath(); cCtx.arc(190,180,10,0,2*Math.PI); cCtx.strokeStyle='#93a3bf'; cCtx.lineWidth=1.6; cCtx.setLineDash([3,3]); cCtx.stroke(); cCtx.setLineDash([]);
+    cCtx.beginPath(); cCtx.moveTo(170,185); cCtx.bezierCurveTo(195,170,205,205,232,188); cCtx.strokeStyle='#f5b942'; cCtx.lineWidth=4.5; cCtx.lineCap='round'; cCtx.stroke();
+    cCtx.fillStyle='#f5b942'; cCtx.font='11px sans-serif'; cCtx.textAlign='left'; cCtx.fillText('genoma libre en citoplasma', 200, 155);
+    cCtx.restore();
+  },
+  // 3. Biosíntesis
+  (a)=>{
+    cCtx.save(); cCtx.globalAlpha=a;
+    cCtx.strokeStyle='#f5b942'; cCtx.lineWidth=3; cCtx.lineCap='round';
+    for(let k=0;k<4;k++){cCtx.beginPath();cCtx.moveTo(255,150+k*17);cCtx.lineTo(292,156+k*17);cCtx.stroke();}
+    for(let k=0;k<6;k++){
+      const x=250+ (k%3)*22, y=245+Math.floor(k/3)*20;
+      cCtx.beginPath(); cCtx.arc(x,y,4,0,2*Math.PI); cCtx.fillStyle='#33d69f'; cCtx.fill();
+    }
+    cCtx.fillStyle='#93a3bf'; cCtx.font='11px sans-serif'; cCtx.textAlign='left';
+    cCtx.fillText('transcripción / traducción', 250, 130);
+    cCtx.fillText('proteínas + copias del genoma', 244, 285);
+    cCtx.restore();
+  },
+  // 4. Ensamblaje y liberación
+  (a)=>{
+    cCtx.save(); cCtx.globalAlpha=a;
+    for(let k=0;k<4;k++){ drawVirion(95-k*10, 285+k*24, 12, 1, false); }
+    cCtx.fillStyle='#93a3bf'; cCtx.font='11px sans-serif'; cCtx.textAlign='left';
+    cCtx.fillText('liberación (gemación / lisis)', 108, 350);
+    cCtx.restore();
+  }
+];
+
+let currentCycleStep = 0;
+let cycleRaf = null;
+function easeInOutCubic(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+function renderCycleFrame(fromStep,toStep,e){
+  drawCellBase();
+  STEP_DRAWERS[fromStep](1-e);
+  STEP_DRAWERS[toStep](e);
+}
+
+function animateToStep(newStep){
+  if(newStep===currentCycleStep){ renderCycleFrame(newStep,newStep,1); return; }
+  const fromStep = currentCycleStep;
+  cancelAnimationFrame(cycleRaf);
+  const start = performance.now(), dur=750;
+  document.querySelectorAll('.tstep').forEach((el,i)=>el.classList.toggle('active', i===newStep));
+  function frame(now){
+    const t = Math.min(1,(now-start)/dur);
+    renderCycleFrame(fromStep,newStep,easeInOutCubic(t));
+    if(t<1){ cycleRaf=requestAnimationFrame(frame); }
+    else { currentCycleStep=newStep; }
+  }
+  cycleRaf = requestAnimationFrame(frame);
+}
+
+/* ---- reproducción automática de la secuencia completa ---- */
+let autoplayTimer = null;
+function stopAutoplay(){
+  if(autoplayTimer){ clearInterval(autoplayTimer); autoplayTimer=null; document.getElementById('cycle-play').textContent='▶ Reproducir secuencia'; }
+}
+document.getElementById('cycle-play').addEventListener('click', ()=>{
+  if(autoplayTimer){ stopAutoplay(); return; }
+  document.getElementById('cycle-play').textContent='⏸ Pausar';
+  let step = currentCycleStep >= CYCLE_STEPS.length-1 ? 0 : currentCycleStep;
+  animateToStep(step);
+  autoplayTimer = setInterval(()=>{
+    step = (step+1) % CYCLE_STEPS.length;
+    animateToStep(step);
+    if(step===CYCLE_STEPS.length-1){ setTimeout(stopAutoplay, 1400); }
+  }, 1700);
+});
+document.getElementById('cycle-reset').addEventListener('click', ()=>{ stopAutoplay(); animateToStep(0); });
+
+renderCycleFrame(0,0,1);
+</script>
+<section class="page" id="page-replicacion">
+  <div class="eyebrow">05 · Replicación</div>
+  <h1 class="page-title">Estrategias de Replicación y Biosíntesis</h1>
+  <p class="page-lead">Más allá del ciclo general, cada familia viral resuelve de forma distinta el mismo problema bioquímico: <strong>convertir su genoma en ARNm traducible</strong> por los ribosomas del hospedador.</p>
+
+  <div class="card">
+    <h2>Fases de la síntesis macromolecular viral</h2>
+    <div class="grid2">
+      <div class="mini-stat"><div class="k">Genes tempranos</div><div class="v">Codifican <span class="hi-biochem">enzimas replicativas</span> (polimerasas, proteasas) — se expresan antes de la replicación del genoma.</div></div>
+      <div class="mini-stat"><div class="k">Genes tardíos</div><div class="v">Codifican <span class="hi-generic">proteínas estructurales</span> (cápside, envoltura) — se expresan después de iniciada la replicación genómica.</div></div>
+      <div class="mini-stat"><div class="k">Sitio de replicación</div><div class="v">Nuclear (mayoría ADN virus) vs. citoplasmático (mayoría ARN virus, con excepciones como Poxvirus e Influenza).</div></div>
+      <div class="mini-stat"><div class="k">Fidelidad de copiado</div><div class="v">Las polimerasas virales (especialmente ARN-dependientes) carecen de corrección de pruebas → alta tasa de mutación y variabilidad antigénica.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Comparación de estrategias por tipo de genoma</h2>
+    <table>
+      <thead><tr><th>Genoma</th><th>Enzima clave</th><th>¿Infeccioso por sí solo?</th><th>Ejemplo</th></tr></thead>
+      <tbody>
+        <tr><td>dsDNA</td><td>ARN-polimerasa II del hospedador (nuclear)</td><td>Sí (en general)</td><td>Herpesvirus</td></tr>
+        <tr><td>ssDNA</td><td>ADN-polimerasa del hospedador (tras formar dsDNA)</td><td>Sí</td><td>Parvovirus</td></tr>
+        <tr><td>dsRNA</td><td>ARN-polimerasa-ARN dependiente viral (empaquetada)</td><td>No</td><td>Rotavirus</td></tr>
+        <tr><td>ssRNA (+)</td><td>Actúa como ARNm; luego replicasa viral</td><td><span class="hi-generic">Sí</span></td><td>Coronavirus, Poliovirus</td></tr>
+        <tr><td>ssRNA (–)</td><td>ARN-polimerasa-ARN dependiente viral (empaquetada)</td><td>No</td><td>Influenza, Rabia</td></tr>
+        <tr><td>ssRNA retrovirus</td><td>Transcriptasa reversa + integrasa</td><td>No (requiere integración)</td><td>VIH</td></tr>
+        <tr><td>dsDNA-RT</td><td>Transcriptasa reversa (vía ARN pregenómico)</td><td>Sí</td><td>Hepatitis B</td></tr>
+      </tbody>
+    </table>
+    <div class="source">Fuente: Baltimore D., "Expression of animal virus genomes", <em>Bacteriol Rev</em>; Murray, <em>Microbiología Médica</em>.</div>
+  </div>
+
+  <div class="card">
+    <h2>Correlato bioquímico integrador</h2>
+    <p>La <span class="hi-biochem">transcriptasa reversa</span> del VIH rompe el dogma central clásico (ADN→ARN→proteína) al sintetizar ADN bicatenario a partir de un molde de ARN monocatenario — una excepción que hoy es blanco terapéutico directo (inhibidores nucleosídicos y no nucleosídicos de la transcriptasa reversa).</p>
+  </div>
+</section>
+<section class="page" id="page-transmision">
+  <div class="eyebrow">06 · Patogenia clínica</div>
+  <h1 class="page-title">Vías de Transmisión Viral</h1>
+  <p class="page-lead">Selecciona una vía para ver, a la izquierda, el corte <strong>microscópico</strong> de la puerta de entrada, y a la derecha, la vista <strong>macroscópica</strong> corporal de la ruta de diseminación.</p>
+
+  <div class="card">
+    <div class="chipbar" id="trans-chips">
+      <button class="chip active" data-k="respiratoria">Respiratoria</button>
+      <button class="chip" data-k="fecaloral">Fecal-oral</button>
+      <button class="chip" data-k="sexual">Sexual / mucosas genitales</button>
+      <button class="chip" data-k="parenteral">Parenteral / sanguínea</button>
+      <button class="chip" data-k="mordedura">Zoonosis: mordedura</button>
+      <button class="chip" data-k="vector">Zoonosis: vector biológico</button>
+      <button class="chip" data-k="excretas">Zoonosis: excretas/aerosoles</button>
+    </div>
+    <div class="split" style="margin-top:16px;">
+      <div class="stage"><span class="tag">Vista microscópica (puerta de entrada)</span><div id="trans-micro"></div></div>
+      <div class="stage"><span class="tag">Vista macroscópica (cuerpo / diseminación)</span><div id="trans-macro"></div></div>
+    </div>
+    <div class="info-panel" id="trans-info" style="margin-top:18px;"></div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 06 · TRANSMISIÓN
+===================================================================== */
+function bodySVG(highlight){
+  const zones = {
+    nariz:{cx:150,cy:60,r:8}, pulmon:{cx:150,cy:120,r:34},
+    intestino:{cx:150,cy:210,rx:38,ry:30}, genital:{cx:150,cy:270,r:16},
+    brazo:{x1:210,y1:140,x2:230,y2:210}, piel:{cx:90,cy:150,r:14}
+  };
+  return `<svg viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#374151" stroke-width="2" fill="#111a2e">
+      <circle cx="150" cy="55" r="30"/>
+      <rect x="120" y="85" width="60" height="110" rx="18"/>
+      <rect x="115" y="190" width="70" height="90" rx="14"/>
+      <line x1="120" y1="100" x2="60" y2="220" stroke-width="14" stroke-linecap="round"/>
+      <line x1="180" y1="100" x2="240" y2="220" stroke-width="14" stroke-linecap="round"/>
+      <line x1="135" y1="280" x2="120" y2="380" stroke-width="16" stroke-linecap="round"/>
+      <line x1="165" y1="280" x2="180" y2="380" stroke-width="16" stroke-linecap="round"/>
+    </g>
+    <circle cx="150" cy="62" r="7" fill="${highlight==='nariz'?'#ff5da2':'none'}" stroke="${highlight==='nariz'?'#ff5da2':'#4d5b78'}" stroke-width="2"/>
+    <ellipse cx="150" cy="120" rx="26" ry="34" fill="${highlight==='pulmon'?'rgba(255,93,162,.35)':'none'}" stroke="${highlight==='pulmon'?'#ff5da2':'#4d5b78'}" stroke-width="2"/>
+    <ellipse cx="150" cy="220" rx="34" ry="28" fill="${highlight==='intestino'?'rgba(51,214,159,.35)':'none'}" stroke="${highlight==='intestino'?'#33d69f':'#4d5b78'}" stroke-width="2"/>
+    <circle cx="150" cy="270" r="14" fill="${highlight==='genital'?'rgba(124,92,255,.4)':'none'}" stroke="${highlight==='genital'?'#7c5cff':'#4d5b78'}" stroke-width="2"/>
+    <line x1="220" y1="150" x2="235" y2="205" stroke="${highlight==='brazo'?'#3ba3ff':'#4d5b78'}" stroke-width="${highlight==='brazo'?6:2}"/>
+    <circle cx="90" cy="150" r="10" fill="${highlight==='piel'?'rgba(245,185,66,.4)':'none'}" stroke="${highlight==='piel'?'#f5b942':'#4d5b78'}" stroke-width="2"/>
+    <text x="150" y="395" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Silueta corporal esquemática</text>
+  </svg>`;
+}
+function microSVG(kind){
+  const common = `xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 260"`;
+  if(kind==='cilios') return `<svg ${common}><rect x="0" y="170" width="300" height="70" fill="#111a2e"/>
+    ${Array.from({length:14}).map((_,i)=>`<line x1="${10+i*21}" y1="170" x2="${10+i*21}" y2="130" stroke="#ff5da2" stroke-width="3" stroke-linecap="round"/>`).join('')}
+    <circle cx="150" cy="110" r="10" fill="#ff5da2"/><circle cx="150" cy="110" r="10" fill="none" stroke="#fff" stroke-width="1"/>
+    <text x="150" y="250" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Epitelio ciliado respiratorio</text></svg>`;
+  if(kind==='enterocitos') return `<svg ${common}><rect x="0" y="180" width="300" height="60" fill="#111a2e"/>
+    ${Array.from({length:10}).map((_,i)=>`<rect x="${10+i*29}" y="150" width="24" height="30" fill="#0e1728" stroke="#33d69f" stroke-width="1.5"/>`).join('')}
+    <circle cx="150" cy="110" r="10" fill="#33d69f"/>
+    <text x="150" y="250" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Enterocitos intestinales</text></svg>`;
+  if(kind==='mucosagenital') return `<svg ${common}><rect x="0" y="180" width="300" height="60" fill="#111a2e"/>
+    ${Array.from({length:8}).map((_,i)=>`<rect x="${10+i*36}" y="155" width="30" height="25" rx="4" fill="#0e1728" stroke="#7c5cff" stroke-width="1.5"/>`).join('')}
+    <circle cx="150" cy="110" r="10" fill="#7c5cff"/>
+    <text x="150" y="250" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Mucosa genital estratificada</text></svg>`;
+  if(kind==='vaso') return `<svg ${common}><rect x="60" y="60" width="180" height="140" rx="70" fill="none" stroke="#3ba3ff" stroke-width="4"/>
+    <circle cx="150" cy="130" r="9" fill="#3ba3ff"/><circle cx="120" cy="150" r="9" fill="#3ba3ff"/><circle cx="180" cy="110" r="9" fill="#3ba3ff"/>
+    <text x="150" y="230" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Luz de vaso sanguíneo</text></svg>`;
+  if(kind==='pielmordida') return `<svg ${common}><rect x="0" y="140" width="300" height="90" fill="#111a2e"/>
+    <path d="M110,140 L130,175 L150,140 L170,175 L190,140" fill="none" stroke="#f5b942" stroke-width="4"/>
+    <circle cx="150" cy="185" r="9" fill="#f5b942"/>
+    <text x="150" y="245" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Herida punzante (saliva infectada)</text></svg>`;
+  if(kind==='vectorpicadura') return `<svg ${common}><rect x="0" y="150" width="300" height="80" fill="#111a2e"/>
+    <line x1="150" y1="130" x2="150" y2="170" stroke="#4d5b78" stroke-width="3"/>
+    <circle cx="150" cy="120" r="7" fill="#4d5b78"/>
+    <circle cx="150" cy="185" r="8" fill="#f5b942"/>
+    <text x="150" y="245" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Probóscide de vector inoculando</text></svg>`;
+  if(kind==='aerosolexcreta') return `<svg ${common}><rect x="0" y="170" width="300" height="70" fill="#111a2e"/>
+    ${Array.from({length:10}).map((_,i)=>`<circle cx="${20+i*28}" cy="${120+((i%3)*15)}" r="4" fill="#33d69f" opacity="0.8"/>`).join('')}
+    <text x="150" y="250" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Aerosolización de excretas de roedor</text></svg>`;
+  return '';
+}
+const TRANS_DATA = {
+  respiratoria:{micro:'cilios', macro:'pulmon', h:`<h4>Transmisión Respiratoria (persona a persona)</h4><p>Gotitas o aerosoles cargados de virus se depositan en el epitelio ciliado nasofaríngeo/bronquial, donde las glicoproteínas virales se unen a receptores del enterocito ciliar.</p><p><strong>Ejemplos:</strong> Influenza, Rinovirus, SARS-CoV-2, Sarampión.</p><div class="source">Fuente: MedlinePlus; Murray, <em>Microbiología Médica</em>.</div>`},
+  fecaloral:{micro:'enterocitos', macro:'intestino', h:`<h4>Transmisión Fecal-Oral (persona a persona)</h4><p>Ingesta de agua o alimentos contaminados con partículas virales eliminadas en heces; el virus debe resistir el pH ácido gástrico (favorecido por cápsides desnudas).</p><p><strong>Ejemplos:</strong> Rotavirus, Norovirus, Hepatitis A.</p><div class="source">Fuente: MedlinePlus.</div>`},
+  sexual:{micro:'mucosagenital', macro:'genital', h:`<h4>Transmisión Sexual (persona a persona)</h4><p>Contacto directo con mucosas genitales, semen o secreciones vaginales infectadas; microtraumatismos facilitan la entrada.</p><p><strong>Ejemplos:</strong> VPH, Herpes simple tipo 2, VIH.</p><div class="source">Fuente: MedlinePlus.</div>`},
+  parenteral:{micro:'vaso', macro:'brazo', h:`<h4>Transmisión Parenteral / Sanguínea (persona a persona)</h4><p>Exposición directa a sangre o hemoderivados infectados: transfusiones, agujas compartidas, accidentes percutáneos, vía vertical (madre-hijo).</p><p><strong>Ejemplos:</strong> VIH, Hepatitis B y C.</p><div class="source">Fuente: MedlinePlus.</div>`},
+  mordedura:{micro:'pielmordida', macro:'piel', h:`<h4>Zoonosis: Mordedura Directa</h4><p>La saliva infectada de un animal (perro, murciélago) inocula el virus directamente en tejido subcutáneo/muscular; de ahí migra por vía axonal retrógrada.</p><p><strong>Ejemplo:</strong> Virus de la Rabia.</p><div class="source">Fuente: MedlinePlus – "Rabia".</div>`},
+  vector:{micro:'vectorpicadura', macro:'piel', h:`<h4>Zoonosis: Vector Biológico (Arbovirus)</h4><p>Un artrópodo hematófago (mosquito, garrapata) inocula el virus al alimentarse, tras haberse infectado de un reservorio animal o humano previo.</p><p><strong>Ejemplos:</strong> Dengue, Zika, Fiebre Amarilla, Encefalitis equina.</p><div class="source">Fuente: MedlinePlus – "Enfermedades transmitidas por vectores".</div>`},
+  excretas:{micro:'aerosolexcreta', macro:'pulmon', h:`<h4>Zoonosis: Inhalación de Excretas</h4><p>Aerosolización de orina, heces o saliva de roedores infectados, inhalada directamente hacia el tracto respiratorio.</p><p><strong>Ejemplo:</strong> Hantavirus (síndrome cardiopulmonar).</p><div class="source">Fuente: MedlinePlus – "Hantavirus".</div>`}
+};
+function renderTrans(k){
+  const d = TRANS_DATA[k];
+  document.getElementById('trans-micro').innerHTML = microSVG(d.micro);
+  document.getElementById('trans-macro').innerHTML = bodySVG(d.macro);
+  document.getElementById('trans-info').innerHTML = d.h;
+}
+document.querySelectorAll('#trans-chips .chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#trans-chips .chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); renderTrans(c.dataset.k);
+  });
+});
+renderTrans('respiratoria');
+</script>
+<section class="page" id="page-interaccion">
+  <div class="eyebrow">07 · Patogenia clínica</div>
+  <h1 class="page-title">Interacción Virus–Hospedador</h1>
+  <p class="page-lead">El desenlace de un encuentro viral no depende solo del virus: es el resultado de la ecuación entre <strong>tropismo viral</strong>, <strong>permisividad celular</strong> y <strong>respuesta del hospedador</strong>.</p>
+
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <h3>Determinantes del tropismo</h3>
+        <p><strong>Receptor específico:</strong> sin el receptor celular complementario a la PAV viral, no hay adsorción posible (ej. CD4 + correceptor CCR5/CXCR4 para VIH).</p>
+        <p><strong>Permisividad celular:</strong> aunque el virus entre, la célula debe proveer los factores de transcripción/traducción necesarios para completar el ciclo.</p>
+        <p><strong>Factores del hospedador:</strong> edad, estado inmunitario, microbiota, comorbilidades y genética individual modulan la susceptibilidad.</p>
+      </div>
+      <div>
+        <h3>Desenlaces posibles de la interacción</h3>
+        <p><span class="hi-micro">Infección abortiva:</span> el virus entra pero no completa el ciclo (célula no permisiva).</p>
+        <p><span class="hi-micro">Infección productiva:</span> ciclo completo con liberación de progenie viral infecciosa.</p>
+        <p><span class="hi-micro">Infección latente:</span> el genoma persiste sin producir viriones de forma continua (reactivable).</p>
+        <p><span class="hi-micro">Transformación celular:</span> el virus altera permanentemente el control del ciclo celular (oncogénesis).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--immuno,var(--envelope));">
+    <h2>⚙️ Mecanismo — ⚠️ Problema — 💊 Solución — 🏥 Enfermedad</h2>
+    <p><strong>Mecanismo:</strong> la gp120 del VIH se une a CD4 y a un correceptor de quimiocinas (CCR5 o CXCR4) en linfocitos T colaboradores, macrófagos y células dendríticas.</p>
+    <p><strong>Problema:</strong> la destrucción progresiva de linfocitos T CD4+ colapsa la inmunidad celular, exponiendo al hospedador a infecciones oportunistas.</p>
+    <p><strong>Solución:</strong> terapia antirretroviral combinada (TARV) que bloquea múltiples pasos del ciclo (entrada, transcriptasa reversa, integrasa, proteasa).</p>
+    <p><strong>Enfermedad relacionada:</strong> <span class="hi-generic">Síndrome de Inmunodeficiencia Adquirida (SIDA)</span>.</p>
+    <div class="source">Fuente: MedlinePlus – "VIH/SIDA"; Murray, <em>Microbiología Médica</em>.</div>
+  </div>
+</section>
+<section class="page" id="page-infecciones">
+  <div class="eyebrow">08 · Patogenia clínica</div>
+  <h1 class="page-title">Tipos de Infección Celular</h1>
+  <p class="page-lead">A nivel de la célula individual, la infección viral sigue uno de tres destinos principales. Explora el corte microscópico celular de cada uno.</p>
+
+  <div class="card">
+    <div class="chipbar" id="inf-chips">
+      <button class="chip active" data-k="citolitica">Citolítica</button>
+      <button class="chip" data-k="persistente">Persistente / Latente</button>
+      <button class="chip" data-k="transformante">Transformante</button>
+    </div>
+    <div class="split" style="margin-top:16px;">
+      <div class="stage"><span class="tag">Corte celular microscópico</span><div id="inf-svg"></div></div>
+      <div class="info-panel" id="inf-info"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 08 · TIPOS DE INFECCIÓN
+===================================================================== */
+const INF_DATA = {
+  citolitica:{
+    svg:`<svg viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="150" cy="130" r="90" fill="none" stroke="#ff5d5d" stroke-width="3" stroke-dasharray="6 5"/>
+      ${Array.from({length:10}).map((_,i)=>{const a=i*Math.PI/5;return `<circle cx="${150+70*Math.cos(a)}" cy="${130+70*Math.sin(a)}" r="7" fill="#ff5da2"/>`}).join('')}
+      <text x="150" y="245" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Lisis celular con liberación masiva de viriones</text>
+    </svg>`,
+    h:`<h4>Infección Citolítica (lítica)</h4>
+    <p><strong>Mecanismo:</strong> el virus secuestra por completo los recursos metabólicos, deteniendo la síntesis proteica celular propia (efecto "shut-off del hospedador") y produciendo miles de copias virales.</p>
+    <p><strong>Problema:</strong> destrucción masiva e inmediata de la arquitectura celular por lisis, con liberación sincrónica de progenie infecciosa.</p>
+    <p><strong>Correlato histológico:</strong> <span class="hi-micro">efecto citopático</span> — formación de sincicios (fusión de membranas) y cuerpos de inclusión intranucleares o citoplasmáticos visibles en tinciones de rutina.</p>
+    <p><strong>Ejemplos:</strong> Poliovirus, Influenza, Rinovirus.</p>
+    <div class="source">Fuente: Murray, <em>Microbiología Médica</em>; Robbins, <em>Patología Estructural y Funcional</em> (efecto citopático).</div>`
+  },
+  persistente:{
+    svg:`<svg viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="150" cy="130" r="90" fill="#111a2e" stroke="#f5b942" stroke-width="3"/>
+      <circle cx="150" cy="130" r="42" fill="none" stroke="#93a3bf" stroke-width="2"/>
+      <path d="M135,120 q10,-15 25,-5 q15,10 5,25 q-10,15 -25,5 q-12,-8 -5,-25" fill="none" stroke="#f5b942" stroke-width="3"/>
+      <text x="150" y="245" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Genoma latente en el núcleo, célula intacta</text>
+    </svg>`,
+    h:`<h4>Infección Persistente (crónica o latente)</h4>
+    <p><strong>Mecanismo:</strong> el genoma viral persiste de forma episomal o integrada dentro de la célula sin producir lisis, replicándose de forma lenta, silente o intermitente.</p>
+    <p><strong>Latencia verdadera:</strong> no hay producción de viriones hasta la <em>reactivación</em> (estrés, inmunosupresión, luz UV).</p>
+    <p><strong>Ejemplo clásico:</strong> Herpes simple permanece latente en el ganglio del <span class="hi-generic">trigémino</span> o ganglios sacros, reactivándose como herpes labial o genital recurrente.</p>
+    <p><strong>Otro ejemplo:</strong> Virus de la Hepatitis B crónica, con replicación de bajo nivel sostenida.</p>
+    <div class="source">Fuente: MedlinePlus – "Herpes simple"; Murray, <em>Microbiología Médica</em>.</div>`
+  },
+  transformante:{
+    svg:`<svg viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="110" cy="130" r="55" fill="none" stroke="#93a3bf" stroke-width="2"/>
+      <path d="M190,80 q40,10 45,45 q5,35 -25,55 q-30,20 -60,0 q30,10 45,-15 q15,-25 -5,-45 q-20,-20 0,-40" fill="none" stroke="#33d69f" stroke-width="3"/>
+      <text x="150" y="245" text-anchor="middle" fill="#93a3bf" font-size="11" font-family="sans-serif">Célula normal (izq.) vs. proliferación tumoral (der.)</text>
+    </svg>`,
+    h:`<h4>Infección Transformante</h4>
+    <p><strong>Mecanismo:</strong> proteínas virales inactivan proteínas supresoras de tumor (p53, Rb) o activan protooncogenes celulares, liberando el control normal del ciclo celular.</p>
+    <p><strong>Problema:</strong> proliferación celular descontrolada e inmortalización, con acumulación progresiva de mutaciones → neoplasia.</p>
+    <p><strong>Ejemplos:</strong> VPH de alto riesgo (E6/E7 inactivan p53/Rb) → cáncer cervicouterino; virus Epstein-Barr → linfoma de Burkitt.</p>
+    <div class="source">Fuente: Robbins, <em>Patología Estructural y Funcional</em>, cap. Neoplasias; MedlinePlus.</div>`
+  }
+};
+function renderInf(k){
+  document.getElementById('inf-svg').innerHTML = INF_DATA[k].svg;
+  document.getElementById('inf-info').innerHTML = INF_DATA[k].h;
+}
+document.querySelectorAll('#inf-chips .chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#inf-chips .chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); renderInf(c.dataset.k);
+  });
+});
+renderInf('citolitica');
+</script>
+<section class="page" id="page-cancer">
+  <div class="eyebrow">09 · Patogenia clínica</div>
+  <h1 class="page-title">Virus Asociados a Cáncer (Oncovirus)</h1>
+  <p class="page-lead">Se estima que un porcentaje relevante de cánceres humanos a nivel mundial tiene un componente viral. Todos comparten un principio: interferir con los frenos naturales del ciclo celular.</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Virus</th><th>Mecanismo oncogénico principal</th><th>Neoplasia asociada</th></tr></thead>
+      <tbody>
+        <tr><td>Virus del Papiloma Humano (VPH 16/18)</td><td>Oncoproteínas E6 (degrada p53) y E7 (inactiva Rb)</td><td>Cáncer cervicouterino, orofaríngeo, anal</td></tr>
+        <tr><td>Virus Epstein-Barr (VEB)</td><td>Proteína LMP-1 mimetiza señales de proliferación constitutiva; inmortalización de linfocitos B</td><td>Linfoma de Burkitt, carcinoma nasofaríngeo</td></tr>
+        <tr><td>Virus Hepatitis B (VHB)</td><td>Integración genómica + inflamación crónica y regeneración hepatocelular sostenida</td><td>Hepatocarcinoma</td></tr>
+        <tr><td>Virus Hepatitis C (VHC)</td><td>Inflamación crónica, estrés oxidativo y fibrosis hepática sostenida</td><td>Hepatocarcinoma</td></tr>
+        <tr><td>HTLV-1 (Virus linfotrópico de células T humanas)</td><td>Proteína Tax activa transcripción de genes celulares proliferativos</td><td>Leucemia/linfoma de células T del adulto</td></tr>
+        <tr><td>Herpesvirus Humano 8 (VHH-8)</td><td>Proteínas virales inhiben apoptosis y promueven angiogénesis</td><td>Sarcoma de Kaposi</td></tr>
+      </tbody>
+    </table>
+    <div class="source">Fuente: MedlinePlus – "Virus y cáncer"; Robbins, <em>Patología Estructural y Funcional</em>, cap. Neoplasias.</div>
+  </div>
+
+  <div class="card">
+    <h2>Principio unificador</h2>
+    <p>Los oncovirus no "causan" cáncer de forma directa e inmediata: <span class="hi-micro">alteran el equilibrio entre proliferación y apoptosis</span>, y la neoplasia franca requiere años de exposición sostenida más mutaciones adicionales acumuladas (modelo multi-hit de carcinogénesis).</p>
+  </div>
+</section>
+<section class="page" id="page-patogenia">
+  <div class="eyebrow">10 · Patogenia clínica</div>
+  <h1 class="page-title">Patogenia de las Infecciones Virales</h1>
+  <p class="page-lead">Desde la entrada hasta la resolución (o cronicidad), toda infección viral atraviesa etapas predecibles. Haz clic para expandir cada una.</p>
+
+  <div class="card">
+    <div class="timeline" id="pato-timeline"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ejemplo clínico integrador</h2>
+    <p><strong>Sarampión:</strong> entra por vía respiratoria → replica en epitelio y ganglios linfáticos regionales → viremia primaria → replica en el sistema reticuloendotelial → viremia secundaria masiva → tropismo por piel, conjuntiva, tracto respiratorio y ocasionalmente SNC (panencefalitis esclerosante subaguda como secuela tardía).</p>
+    <div class="source">Fuente: MedlinePlus – "Sarampión"; Murray, <em>Microbiología Médica</em>, cap. Paramyxoviridae.</div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 10 · PATOGENIA
+===================================================================== */
+const PATO_STEPS = [
+ {t:'1 · Entrada / Puerta de entrada',d:'El virus atraviesa una barrera epitelial (respiratoria, digestiva, genital, cutánea) o es inoculado directamente (parenteral, vectorial).'},
+ {t:'2 · Replicación primaria local',d:'Multiplicación inicial en la puerta de entrada o en tejido linfoide regional asociado a mucosas.'},
+ {t:'3 · Diseminación (viremia/viñemia)',d:'El virus alcanza el torrente sanguíneo (viremia primaria) libre o dentro de células infectadas (monocitos, linfocitos), permitiendo diseminación sistémica.'},
+ {t:'4 · Tropismo y replicación secundaria',d:'El virus llega a su(s) órgano(s) blanco según el tropismo definido por sus receptores (hígado, SNC, piel, gónadas) y se replica de nuevo, a veces en mayor cuantía (viremia secundaria).'},
+ {t:'5 · Lesión tisular',d:'El daño puede ser directo (efecto citopático, lisis) o indirecto (inmunopatología: la respuesta inmune del propio hospedador daña el tejido infectado).'},
+ {t:'6 · Resolución, persistencia o secuela',d:'La infección se resuelve por inmunidad efectiva, persiste como latencia/cronicidad, o deja secuelas permanentes (p. ej. parálisis residual en poliomielitis).'}
+];
+const patoTl = document.getElementById('pato-timeline');
+PATO_STEPS.forEach((s,i)=>{
+  const div=document.createElement('div');
+  div.className='tstep'+(i===0?' active':'');
+  div.innerHTML=`<div class="dot">${i+1}</div><div><div class="tt">${s.t}</div><div class="td2">${s.d}</div></div>`;
+  div.onclick=()=>{
+    document.querySelectorAll('#pato-timeline .tstep').forEach(x=>x.classList.remove('active'));
+    div.classList.add('active');
+  };
+  patoTl.appendChild(div);
+});
+</script>
+<section class="page" id="page-inmunidad">
+  <div class="eyebrow">11 · Defensa y clínica</div>
+  <h1 class="page-title">Inmunidad Antiviral y Mecanismos de Defensa</h1>
+  <p class="page-lead">El hospedador responde en capas escalonadas en el tiempo: primero barreras físicas, luego inmunidad innata (minutos-horas), después inmunidad adaptativa (días), sin olvidar que el virus también evoluciona formas de evadirlas.</p>
+
+  <div class="card">
+    <div class="chipbar" id="inm-chips">
+      <button class="chip active" data-k="barreras">Barreras Físicas</button>
+      <button class="chip" data-k="innata">Inmunidad Innata</button>
+      <button class="chip" data-k="adaptativa">Inmunidad Adaptativa</button>
+      <button class="chip" data-k="evasion">Evasión Viral</button>
+    </div>
+    <div id="inm-content" style="margin-top:16px;"></div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 11 · INMUNIDAD ANTIVIRAL
+===================================================================== */
+const INM_DATA = {
+  barreras:`<div class="grid2">
+    <div class="mini-stat"><div class="k">Piel</div><div class="v">Barrera queratinizada impermeable; descamación continua elimina patógenos superficiales.</div></div>
+    <div class="mini-stat"><div class="k">Moco y cilios</div><div class="v">Atrapan partículas virales y las transportan fuera del tracto respiratorio (aclaramiento mucociliar).</div></div>
+    <div class="mini-stat"><div class="k">pH ácido gástrico</div><div class="v">Inactiva la mayoría de virus envueltos ingeridos (los desnudos resisten mejor).</div></div>
+    <div class="mini-stat"><div class="k">Microbiota comensal</div><div class="v">Compite por receptores y nutrientes, dificultando la colonización viral.</div></div>
+  </div>`,
+  innata:`<div class="grid2">
+    <div>
+      <h3>Interferones tipo I (IFN-α/β)</h3>
+      <p>Producidos por la célula infectada al detectar ARN de doble cadena (vía receptores PRR como TLR3, RIG-I). Se secretan e inducen un <span class="hi-immuno">estado antiviral</span> en células vecinas no infectadas, activando genes que degradan ARN viral e inhiben la traducción.</p>
+      <h3>Células NK (Natural Killer)</h3>
+      <p>Reconocen y destruyen células con expresión reducida de MHC-I (mecanismo de evasión típico de células infectadas), liberando perforinas y granzimas.</p>
+    </div>
+    <div>
+      <h3>Sistema del complemento</h3>
+      <p>La vía alterna y de lectinas puede neutralizar viriones directamente u opsonizarlos para facilitar la fagocitosis.</p>
+      <h3>Células dendríticas y macrófagos</h3>
+      <p>Fagocitan partículas virales y presentan antígenos, actuando como puente hacia la inmunidad adaptativa.</p>
+    </div>
+  </div>`,
+  adaptativa:`<div class="grid2">
+    <div>
+      <h3>Inmunidad humoral (Linfocitos B)</h3>
+      <p>Producen <span class="hi-immuno">anticuerpos neutralizantes</span> dirigidos contra proteínas de superficie (PAV), bloqueando la adsorción del virus a nuevas células. La IgA secretora protege mucosas; la IgG confiere memoria a largo plazo.</p>
+    </div>
+    <div>
+      <h3>Inmunidad celular (Linfocitos T)</h3>
+      <p><span class="hi-immuno">Linfocitos T citotóxicos (CD8+)</span> reconocen péptidos virales presentados en MHC-I y destruyen directamente la célula infectada por apoptosis (perforina/granzimas, Fas-FasL).</p>
+      <p>Linfocitos T colaboradores (CD4+) coordinan la respuesta, activando tanto a linfocitos B como a linfocitos T citotóxicos.</p>
+    </div>
+  </div>
+  <div class="source">Fuente: Murray, <em>Microbiología Médica</em>, cap. Inmunidad antiviral; MedlinePlus.</div>`,
+  evasion:`<div class="grid2">
+    <div>
+      <p><strong>Variación antigénica:</strong> mutación (deriva) o reordenamiento genético (shift) de proteínas de superficie, evadiendo anticuerpos preexistentes (Influenza).</p>
+      <p><strong>Downregulación de MHC-I:</strong> algunos virus (Herpesvirus, Adenovirus) reducen la expresión de MHC-I para evitar el reconocimiento por linfocitos T citotóxicos.</p>
+    </div>
+    <div>
+      <p><strong>Bloqueo de interferón:</strong> proteínas virales inhiben la cascada de señalización de IFN o degradan sus efectores.</p>
+      <p><strong>Latencia:</strong> el genoma permanece transcripcionalmente silente, invisible para el sistema inmune (Herpesvirus).</p>
+      <p><strong>Infección de células inmunes:</strong> el VIH destruye directamente a los linfocitos T CD4+ que deberían coordinar la respuesta contra él.</p>
+    </div>
+  </div>
+  <div class="source">Fuente: Murray, <em>Microbiología Médica</em>; MedlinePlus – "Cómo el VIH afecta el sistema inmunitario".</div>`
+};
+function renderInm(k){ document.getElementById('inm-content').innerHTML = INM_DATA[k]; }
+document.querySelectorAll('#inm-chips .chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#inm-chips .chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); renderInm(c.dataset.k);
+  });
+});
+renderInm('barreras');
+</script>
+<section class="page" id="page-diagnostico">
+  <div class="eyebrow">12 · Defensa y clínica</div>
+  <h1 class="page-title">Diagnóstico Viral</h1>
+  <p class="page-lead">Del laboratorio a la cabecera del paciente: cada método diagnóstico responde una pregunta distinta (¿hay partícula?, ¿hay replicación activa?, ¿hubo exposición previa?, ¿hay material genético?).</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Método</th><th>¿Qué detecta?</th><th>Vista de laboratorio</th><th>Utilidad clínica</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Microscopía electrónica</strong></td><td>Morfología del virión intacto</td><td>🔬 Ultraestructura directa</td><td>Identificación rápida en brotes, poco usada de rutina por costo</td></tr>
+        <tr><td><strong>Cultivo celular</strong></td><td>Virus infeccioso viable (efecto citopático)</td><td>🧫 Monocapa celular con lisis focal</td><td>Estándar histórico; lento (días-semanas)</td></tr>
+        <tr><td><strong>Serología (ELISA)</strong></td><td>Anticuerpos IgM/IgG del hospedador</td><td>🧪 Placa de micropocillos</td><td>Diagnóstico retrospectivo, estudios de seroprevalencia</td></tr>
+        <tr><td><strong>Detección de antígeno</strong></td><td>Proteínas virales directas (pruebas rápidas)</td><td>🧪 Prueba rápida tipo tira</td><td>Resultado en minutos, sensibilidad variable</td></tr>
+        <tr><td><strong>PCR / RT-PCR</strong></td><td>Ácido nucleico viral amplificado</td><td>🧬 Amplificación de ADN/ARN</td><td>Alta sensibilidad y especificidad; estándar actual</td></tr>
+        <tr><td><strong>Secuenciación genómica</strong></td><td>Variantes y linajes virales completos</td><td>🧬 Lectura de secuencia completa</td><td>Vigilancia epidemiológica y resistencia</td></tr>
+      </tbody>
+    </table>
+    <div class="source">Fuente: MedlinePlus – "Pruebas de laboratorio para virus"; Murray, <em>Microbiología Médica</em>, cap. Diagnóstico virológico.</div>
+  </div>
+
+  <div class="card">
+    <h2>⚙️ Mecanismo — 🏥 Correlato clínico</h2>
+    <p><strong>Mecanismo:</strong> la RT-PCR retrotranscribe primero el ARN viral a ADN complementario (cDNA) mediante transcriptasa reversa, y luego amplifica exponencialmente una secuencia diana específica mediante ciclos de calentamiento/enfriamiento con una ADN-polimerasa termoestable.</p>
+    <p><strong>Aplicación clínica:</strong> diagnóstico de infecciones respiratorias por virus ARN (Influenza, SARS-CoV-2, VSR) con resultados en horas.</p>
+  </div>
+</section>
+<section class="page" id="page-terapeutica">
+  <div class="eyebrow">13 · Defensa y clínica</div>
+  <h1 class="page-title">Terapéutica Antiviral y Resistencia a Fármacos</h1>
+  <p class="page-lead">Cada antiviral está diseñado para bloquear un paso específico del ciclo viral, minimizando toxicidad en las vías metabólicas propias del hospedador.</p>
+
+  <div class="card">
+    <h2>Blancos terapéuticos a lo largo del ciclo viral</h2>
+    <table>
+      <thead><tr><th>Etapa del ciclo bloqueada</th><th>Clase / fármaco</th><th>Mecanismo</th><th>Ejemplo clínico</th></tr></thead>
+      <tbody>
+        <tr><td>Adsorción / entrada</td><td>Maraviroc (antagonista CCR5)</td><td>Bloquea el correceptor necesario para la entrada del VIH</td><td>VIH</td></tr>
+        <tr><td>Fusión de membranas</td><td>Enfuvirtida</td><td>Impide la fusión de la envoltura viral con la membrana celular</td><td>VIH</td></tr>
+        <tr><td>Desnudamiento</td><td>Amantadina</td><td>Bloquea el canal iónico M2, impidiendo la liberación del genoma</td><td>Influenza A</td></tr>
+        <tr><td>Síntesis de ácido nucleico</td><td><span class="hi-farm">Aciclovir</span> (análogo de nucleósido)</td><td>Requiere fosforilación por timidina-quinasa <em>viral</em>; inhibe selectivamente la ADN-polimerasa viral</td><td>Herpes simple, Varicela-zóster</td></tr>
+        <tr><td>Transcriptasa reversa</td><td>Tenofovir, Efavirenz</td><td>Inhibidores nucleosídicos/no nucleosídicos de la transcriptasa reversa</td><td>VIH, Hepatitis B</td></tr>
+        <tr><td>Integración genómica</td><td>Dolutegravir</td><td>Inhibe la integrasa viral, impidiendo la inserción del provirus</td><td>VIH</td></tr>
+        <tr><td>Ensamblaje / maduración</td><td>Inhibidores de proteasa (ej. Ritonavir)</td><td>Impiden el corte de poliproteínas virales precursoras</td><td>VIH</td></tr>
+        <tr><td>Liberación</td><td>Oseltamivir (inhibidor de neuraminidasa)</td><td>Impide que los viriones nuevos se liberen de la superficie celular</td><td>Influenza</td></tr>
+      </tbody>
+    </table>
+    <div class="source">Fuente: MedlinePlus – "Medicamentos antivirales"; Goodman & Gilman, <em>Las Bases Farmacológicas de la Terapéutica</em>, cap. Antivirales.</div>
+  </div>
+
+  <div class="card">
+    <h2>Resistencia a Fármacos Antivirales</h2>
+    <p><strong>Mecanismo:</strong> mutaciones puntuales en el gen que codifica la enzima blanco (polimerasa, proteasa, integrasa), favorecidas por la <span class="hi-biochem">baja fidelidad de las polimerasas virales</span> (ausencia de corrección de pruebas, especialmente en ARN virus).</p>
+    <p><strong>Problema:</strong> la mutación reduce la afinidad del fármaco por su blanco sin eliminar la función enzimática esencial, permitiendo replicación en presencia del antiviral.</p>
+    <p><strong>Solución clínica:</strong> terapia combinada (múltiples blancos simultáneos, como en TARV) para elevar la barrera genética a la resistencia; vigilancia genotípica de mutaciones de resistencia.</p>
+    <div class="source">Fuente: MedlinePlus – "Resistencia a los medicamentos contra el VIH".</div>
+  </div>
+</section>
+<section class="page" id="page-profilaxis">
+  <div class="eyebrow">14 · Defensa y clínica</div>
+  <h1 class="page-title">Profilaxis Viral</h1>
+  <p class="page-lead">Prevenir es más eficiente que tratar: la inmunización busca generar memoria protectora antes del contacto con el virus salvaje.</p>
+
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <h3>Inmunización Activa (vacunas)</h3>
+        <p><strong>Vivas atenuadas:</strong> virus replicativo debilitado que genera inmunidad robusta y duradera (celular + humoral), simulando la infección natural. Ej.: Sarampión-Rubéola-Parotiditis (SRP), Fiebre Amarilla, Polio oral (Sabin).</p>
+        <p><strong>Inactivadas / fraccionadas:</strong> virus muerto o subunidades proteicas, no replicativas, generalmente requieren refuerzos. Ej.: Influenza inyectable, Polio inactivada (Salk), Hepatitis A.</p>
+        <p><strong>De subunidad / recombinantes:</strong> solo la proteína inmunogénica (ej. VPH — proteína L1 de la cápside).</p>
+        <p><strong>ARNm:</strong> instrucciones genéticas para que las propias células del hospedador produzcan transitoriamente la proteína viral inmunogénica.</p>
+      </div>
+      <div>
+        <h3>Inmunización Pasiva</h3>
+        <p><strong>Inmunoglobulinas específicas:</strong> anticuerpos preformados administrados tras la exposición, para protección inmediata mientras se desarrolla inmunidad activa (o cuando esta no es posible). Ej.: inmunoglobulina antirrábica tras mordedura, inmunoglobulina anti-hepatitis B en recién nacidos de madres portadoras.</p>
+        <p><strong>Anticuerpos monoclonales:</strong> dirigidos específicamente contra proteínas de superficie virales, usados en profilaxis de alto riesgo (ej. palivizumab contra VSR en prematuros).</p>
+        <p><strong>Diferencia clave:</strong> la inmunización pasiva otorga protección <span class="hi-immuno">inmediata pero transitoria</span> (semanas-meses); la activa es de <span class="hi-immuno">inicio más lento pero duradera</span> (años).</p>
+      </div>
+    </div>
+    <div class="source">Fuente: MedlinePlus – "Vacunas"; Murray, <em>Microbiología Médica</em>, cap. Inmunoprofilaxis.</div>
+  </div>
+
+  <div class="card">
+    <h2>Medidas no farmacológicas</h2>
+    <p>Control de vectores (mosquiteros, insecticidas para arbovirus), higiene de manos y agua potable (fecal-oral), uso de barrera en transmisión sexual, cribado de bancos de sangre (parenteral) y aislamiento respiratorio en brotes.</p>
+  </div>
+</section>
+<section class="page" id="page-comparativa">
+  <div class="eyebrow">15 · Síntesis</div>
+  <h1 class="page-title">Tabla Comparativa Integradora</h1>
+  <p class="page-lead">Una misma vista para contrastar los ejes que más se confunden en el estudio de virología: envuelto vs. desnudo, ADN vs. ARN, y los tres tipos de infección celular.</p>
+
+  <div class="card">
+    <h2>Virus Envueltos vs. Virus Desnudos</h2>
+    <table>
+      <thead><tr><th>Característica</th><th>Envuelto</th><th>Desnudo</th></tr></thead>
+      <tbody>
+        <tr><td>Resistencia ambiental</td><td>Baja (lábil a desecación, calor, solventes)</td><td>Alta (resiste desecación, ácido gástrico, detergentes suaves)</td></tr>
+        <tr><td>Vía de transmisión típica</td><td>Contacto directo, respiratoria, sexual, sanguínea</td><td>Fecal-oral, fómites, agua/alimentos</td></tr>
+        <tr><td>Mecanismo de entrada</td><td>Fusión de membranas</td><td>Endocitosis / disrupción de membrana</td></tr>
+        <tr><td>Liberación</td><td>Gemación (no necesariamente lisis)</td><td>Lisis celular</td></tr>
+        <tr><td>Sensibilidad a alcohol/detergentes</td><td>Alta</td><td>Baja</td></tr>
+        <tr><td>Ejemplos</td><td>VIH, Influenza, Herpesvirus, Coronavirus</td><td>Poliovirus, Rotavirus, Adenovirus, Norovirus</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Virus ADN vs. Virus ARN</h2>
+    <table>
+      <thead><tr><th>Característica</th><th>ADN</th><th>ARN</th></tr></thead>
+      <tbody>
+        <tr><td>Sitio de replicación habitual</td><td>Núcleo (usa maquinaria del hospedador)</td><td>Citoplasma (trae su propia polimerasa)</td></tr>
+        <tr><td>Fidelidad de copiado</td><td>Alta (corrección de pruebas)</td><td>Baja (alta tasa de mutación)</td></tr>
+        <tr><td>Variabilidad antigénica</td><td>Baja / estable</td><td>Alta (deriva y/o reordenamiento)</td></tr>
+        <tr><td>Ejemplo de excepción</td><td>Poxvirus (replica en citoplasma)</td><td>Retrovirus (se integra al núcleo vía ADN proviral)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Tipos de Infección Celular — Cuadro Sinóptico</h2>
+    <table>
+      <thead><tr><th></th><th>Citolítica</th><th>Persistente/Latente</th><th>Transformante</th></tr></thead>
+      <tbody>
+        <tr><td>Destino de la célula</td><td>Muerte (lisis)</td><td>Sobrevive, genoma silente</td><td>Sobrevive, prolifera sin control</td></tr>
+        <tr><td>Producción de viriones</td><td>Masiva y sincrónica</td><td>Ausente o intermitente</td><td>Variable, a veces ausente</td></tr>
+        <tr><td>Reversibilidad</td><td>No aplica (célula muere)</td><td>Reactivable</td><td>Irreversible (transformación permanente)</td></tr>
+        <tr><td>Ejemplo</td><td>Poliovirus</td><td>Herpes simple</td><td>VPH de alto riesgo</td></tr>
+      </tbody>
+    </table>
+    <div class="source">Fuente: Murray, <em>Microbiología Médica</em>; Robbins, <em>Patología Estructural y Funcional</em>.</div>
+  </div>
+</section>
+<section class="page" id="page-integracion">
+  <div class="eyebrow">16 · Síntesis</div>
+  <h1 class="page-title">Integración con las Ciencias Básicas</h1>
+  <p class="page-lead">La virología no vive aislada: cada compartimiento viral y cada etapa patogénica se conecta directamente con otra disciplina básica de la medicina.</p>
+
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <p><strong>Histología:</strong> el <span class="hi-micro">efecto citopático</span> es identificable en tinciones de rutina — sincicios multinucleados y cuerpos de inclusión intranucleares (Herpesvirus, Cuerpos de Negri en Rabia) o citoplasmáticos.</p>
+        <p><strong>Anatomía:</strong> el tropismo tisular define la ruta de diseminación anatómica, como el transporte axonal retrógrado del virus de la Rabia desde el sitio de la mordedura hasta el sistema nervioso central.</p>
+        <p><strong>Microbiología:</strong> a diferencia de las bacterias, los virus no realizan fisión binaria ni tienen pared celular — son completamente refractarios a los antibióticos.</p>
+        <p><strong>Fisiología:</strong> proteínas virales pueden alterar canales iónicos de membrana, rompiendo el equilibrio electroquímico celular (ej. proteína viroporina).</p>
+      </div>
+      <div>
+        <p><strong>Bioquímica:</strong> la <span class="hi-biochem">transcriptasa reversa</span> del VIH invierte el flujo del dogma central, sintetizando ADN desde un molde de ARN.</p>
+        <p><strong>Inmunología:</strong> el <span class="hi-immuno">interferón tipo I (IFN-α/β)</span> induce un estado antiviral generalizado en células adyacentes no infectadas antes de que la respuesta adaptativa esté lista.</p>
+        <p><strong>Farmacología:</strong> el diseño racional de antivirales busca bloquear enzimas exclusivamente virales (timidina-quinasa, proteasa del VIH), minimizando toxicidad en vías metabólicas del hospedador.</p>
+        <p><strong>Biología Celular y Molecular:</strong> el autoensamblaje de capsómeros sigue principios termodinámicos de mínima energía libre, similar al plegamiento proteico espontáneo.</p>
+      </div>
+    </div>
+    <div class="source">Fuente: Robbins, <em>Patología Estructural y Funcional</em>; Lehninger, <em>Bioquímica</em>; Murray, <em>Microbiología Médica</em>.</div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--capsid);">
+    <h2>🏥 Dato de alta relevancia clínica</h2>
+    <p>En pacientes con Rabia no tratada oportunamente, el estudio histopatológico post-mortem del tejido cerebral revela los característicos <span class="tag-hi hi-micro">Cuerpos de Negri</span>: inclusiones citoplasmáticas eosinofílicas dentro de las neuronas, formadas por agregados de nucleocápside viral — un hallazgo histológico patognomónico que integra virología, histología y neuroanatomía en un solo signo diagnóstico.</p>
+    <div class="source">Fuente: MedlinePlus – "Rabia"; Robbins, <em>Patología Estructural y Funcional</em>, cap. Sistema Nervioso.</div>
+  </div>
+</section>
+<section class="page" id="page-quiz">
+  <div class="eyebrow">17 · Síntesis</div>
+  <h1 class="page-title">Autoevaluación Final</h1>
+  <p class="page-lead">Ocho preguntas para consolidar los conceptos recorridos. Responde y recibe retroalimentación inmediata.</p>
+
+  <div class="quiz-box">
+    <div id="quiz-items"></div>
+    <button class="btn" onclick="gradeQuiz()">Calificar Examen</button>
+    <button class="btn ghost" onclick="location.reload()">Reiniciar</button>
+    <div id="quiz-score"></div>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   SECTION 17 · QUIZ FINAL
+===================================================================== */
+const QUIZ = [
+ {q:'¿Por qué el Aciclovir es selectivamente tóxico para células infectadas por Herpesvirus y no para células sanas?',
+  opts:['Destruye la envoltura lipídica de forma inespecífica en el medio extracelular','Requiere fosforilación inicial por la timidina-quinasa viral, activándose solo en células infectadas','Bloquea directamente el receptor celular impidiendo la adsorción','Inhibe la síntesis de proteínas ribosomales del hospedador'],
+  correct:1},
+ {q:'Un virus con genoma ARN monocatenario de sentido negativo (–) NO es infeccioso por sí solo porque:',
+  opts:['Es degradado inmediatamente por nucleasas plasmáticas','No puede atravesar la cápside','No puede funcionar directamente como ARNm; requiere una ARN-polimerasa-ARN dependiente empaquetada en el virión','Carece de cápside protectora'],
+  correct:2},
+ {q:'¿Qué distingue principalmente a un virus envuelto de uno desnudo en términos de transmisión?',
+  opts:['El envuelto es siempre más pequeño','El desnudo resiste mejor la desecación y el pH ácido, favoreciendo la transmisión fecal-oral','El envuelto siempre causa cáncer','No hay diferencia práctica'],
+  correct:1},
+ {q:'La reactivación del Herpes simple desde el ganglio del trigémino corresponde a un ejemplo de:',
+  opts:['Infección citolítica aguda','Infección transformante','Infección persistente/latente','Infección abortiva'],
+  correct:2},
+ {q:'¿Cuál es el mecanismo oncogénico principal del VPH de alto riesgo?',
+  opts:['Integración aleatoria sin efecto proteico','Las oncoproteínas E6 y E7 inactivan p53 y Rb, liberando el control del ciclo celular','Produce directamente metástasis','Bloquea la transcriptasa reversa celular'],
+  correct:1},
+ {q:'¿Qué enzima permite a los retrovirus (como el VIH) sintetizar ADN a partir de su genoma de ARN?',
+  opts:['ADN-polimerasa I','Transcriptasa reversa','Helicasa','Primasa'],
+  correct:1},
+ {q:'En la clasificación de Baltimore, ¿qué tienen en común los 7 grupos a pesar de sus distintas estrategias?',
+  opts:['Todos usan transcriptasa reversa','Todos replican en el núcleo','Todos convergen en producir ARNm funcional traducible por los ribosomas del hospedador','Todos tienen genoma segmentado'],
+  correct:2},
+ {q:'¿Cuál es la principal diferencia funcional entre inmunización activa y pasiva?',
+  opts:['La activa es siempre más rápida que la pasiva','La pasiva otorga protección inmediata pero transitoria; la activa es de inicio más lento pero duradera','No existe diferencia relevante','La pasiva genera memoria inmunológica permanente'],
+  correct:1}
+];
+const qcont = document.getElementById('quiz-items');
+QUIZ.forEach((item,i)=>{
+  const div = document.createElement('div');
+  div.className='qitem';
+  div.innerHTML = `<p><strong>Pregunta ${i+1}.</strong> ${item.q}</p>` +
+    item.opts.map((o,j)=>`<label class="qopt"><input type="radio" name="q${i}" value="${j}"> ${o}</label>`).join('') +
+    `<div class="qfeedback" id="fb-${i}"></div>`;
+  qcont.appendChild(div);
+});
+function gradeQuiz(){
+  let score=0;
+  QUIZ.forEach((item,i)=>{
+    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+    const fb = document.getElementById('fb-'+i);
+    if(!sel){ fb.className='qfeedback bad'; fb.textContent='No respondiste esta pregunta.'; return; }
+    if(+sel.value === item.correct){ score++; fb.className='qfeedback ok'; fb.textContent='Correcto.'; }
+    else{ fb.className='qfeedback bad'; fb.textContent='Incorrecto. Repasa la sección relacionada y vuelve a intentarlo.'; }
+  });
+  document.getElementById('quiz-score').textContent = `Puntaje: ${score} / ${QUIZ.length}`;
+}
+</script>
+
+</main>
+</div>
+
+<script>
+function onSectionShown(id){ /* hook disponible para futuras extensiones */ }
+</script>
+
+<script>
+/* =====================================================================
+   NAVIGATION
+===================================================================== */
+const SECTIONS = [
+  {id:'intro', label:'Generalidades', grp:'Fundamentos'},
+  {id:'clasificacion', label:'Clasificación Viral', grp:'Fundamentos'},
+  {id:'estructura', label:'Estructura del Virión', grp:'Fundamentos'},
+  {id:'ciclo', label:'Ciclo Viral (interactivo)', grp:'Replicación'},
+  {id:'replicacion', label:'Estrategias de Replicación', grp:'Replicación'},
+  {id:'transmision', label:'Transmisión Viral', grp:'Patogenia clínica'},
+  {id:'interaccion', label:'Interacción Virus–Hospedador', grp:'Patogenia clínica'},
+  {id:'infecciones', label:'Tipos de Infección Celular', grp:'Patogenia clínica'},
+  {id:'cancer', label:'Virus y Cáncer', grp:'Patogenia clínica'},
+  {id:'patogenia', label:'Patogenia de la Infección', grp:'Patogenia clínica'},
+  {id:'inmunidad', label:'Inmunidad Antiviral', grp:'Defensa y clínica'},
+  {id:'diagnostico', label:'Diagnóstico Viral', grp:'Defensa y clínica'},
+  {id:'terapeutica', label:'Terapéutica y Resistencia', grp:'Defensa y clínica'},
+  {id:'profilaxis', label:'Profilaxis', grp:'Defensa y clínica'},
+  {id:'comparativa', label:'Tabla Comparativa', grp:'Síntesis'},
+  {id:'integracion', label:'Integración Biomédica', grp:'Síntesis'},
+  {id:'quiz', label:'Autoevaluación', grp:'Síntesis'},
+];
+
+const navlist = document.getElementById('navlist');
+let lastGrp = '';
+SECTIONS.forEach((s,i)=>{
+  if(s.grp !== lastGrp){
+    const t = document.createElement('div');
+    t.className='navgroup-title';
+    t.textContent = s.grp;
+    navlist.appendChild(t);
+    lastGrp = s.grp;
+  }
+  const b = document.createElement('button');
+  b.className='navbtn';
+  b.id='nav-'+s.id;
+  b.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span><span>${s.label}</span>`;
+  b.onclick = ()=>goTo(s.id);
+  navlist.appendChild(b);
+});
+
+function goTo(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  document.getElementById('sidebar').scrollTop=0;
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(typeof onSectionShown === 'function') onSectionShown(id);
+}
+window.onload = function(){ goTo('intro'); };
+</script>
+</body>
+</html>
